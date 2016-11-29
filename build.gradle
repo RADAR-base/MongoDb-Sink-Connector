@@ -1,0 +1,66 @@
+plugins {
+    // Apply the java plugin to add support for Java
+    id 'java'
+    id 'idea'
+    id 'com.commercehub.gradle.plugin.avro-base' version '0.8.0'
+}
+
+version = '1.0'
+
+targetCompatibility = '1.8'
+sourceCompatibility = '1.8'
+
+ext.slf4jVersion = '1.7.21'
+ext.kafkaVersion = '0.10.0.1-cp1'
+ext.confluentVersion = '3.0.1'
+ext.mongodbVersion = '3.3.0'
+ext.guavaVersion = '12.0'
+
+// In this section you declare where to find the dependencies of your project
+repositories {
+    // Use 'jcenter' for resolving your dependencies.
+    // You can declare any Maven/Ivy/file repository here.
+    jcenter()
+    maven {
+        url 'http://packages.confluent.io/maven/'
+    }
+}
+
+// In this section you declare the dependencies for your production and test code
+dependencies {
+    // The production code uses the SLF4J logging API at compile time
+    compile group: 'org.slf4j', name:'slf4j-api', version: slf4jVersion
+
+    // to implement producers and consumers
+    compile group: 'org.apache.kafka', name: 'connect-api', version: kafkaVersion
+    compile group: 'io.confluent', name: 'kafka-avro-serializer', version: confluentVersion
+    compile group: 'org.mongodb', name: 'mongo-java-driver', version: mongodbVersion
+    compile group: 'com.google.guava', name: 'guava', version: guavaVersion
+}
+
+task generateAvro(type: com.commercehub.gradle.plugin.avro.GenerateAvroJavaTask) {
+    source("src/main/resources/avro")
+    outputDir = file("build/avro")
+}
+
+compileJava.source(generateAvro.outputs)
+
+idea {
+    module {
+        sourceDirs += file("build/avro")
+    }
+}
+
+jar {
+    manifest {
+        attributes 'Implementation-Title': 'RADAR-CNS MongoDB connector',
+                'Implementation-Version': version
+    }
+    from {
+        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '3.0'
+}
