@@ -1,11 +1,12 @@
 package org.radarcns.util;
 
+import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.sink.SinkRecord;
 import org.bson.BsonDateTime;
 import org.bson.BsonDouble;
 import org.bson.Document;
-import org.radarcns.aggregator.DoubleAggegator;
-import org.radarcns.aggregator.DoubleArrayAggegator;
-import org.radarcns.key.WindowedKey;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -19,6 +20,8 @@ import java.util.stream.Collectors;
  * Created by Francesco Nobilia on 28/11/2016.
  */
 public class Utility {
+
+    private static final Logger log = LoggerFactory.getLogger(Utility.class);
 
     public static String convertConfigToString(Map<String,String> map){
         return "User configuration are: \n\t"+map.keySet().stream().map(key -> key+": "+map.get(key)).collect(Collectors.joining("\n\t"));
@@ -40,40 +43,53 @@ public class Utility {
         return new HashSet<>(Arrays.asList(value.split(",")));
     }
 
-    public static Document doubleAggToDoc(WindowedKey key, DoubleAggegator value){
-        String mongoId = key.getUserID()+"-"+key.getSourceID()+"-"+key.getStart()+"-"+key.getEnd();
+    public static Document doubleAggToDoc(SinkRecord record){
+
+        Struct key = (Struct) record.key();
+        Struct value = (Struct) record.value();
+
+        String mongoId = key.getString("userID")+"-"+
+                key.getString("sourceID")+"-"+
+                key.getInt64("start")+"-"+
+                key.getInt64("end");
 
         Document doc = new Document("_id", mongoId)
-                .append("user", key.getUserID())
-                .append("source", key.getSourceID())
-                .append("min", new BsonDouble(value.getMin()))
-                .append("max", new BsonDouble(value.getMax()))
-                .append("sum", new BsonDouble(value.getSum()))
-                .append("count", new BsonDouble(value.getCount()))
-                .append("avg", new BsonDouble(value.getAvg()))
-                .append("quartile", extractQuartile(value.getQuartile()))
-                .append("iqr", new BsonDouble(value.getIqr()))
-                .append("start", new BsonDateTime(key.getStart()))
-                .append("end", new BsonDateTime(key.getEnd()));
+                .append("user", key.getString("userID"))
+                .append("source", key.getString("sourceID"))
+                .append("min", new BsonDouble(value.getFloat64("min")))
+                .append("max", new BsonDouble(value.getFloat64("max")))
+                .append("sum", new BsonDouble(value.getFloat64("sum")))
+                .append("count", new BsonDouble(value.getFloat64("count")))
+                .append("avg", new BsonDouble(value.getFloat64("avg")))
+                .append("quartile", extractQuartile(value.getArray("quartile")))
+                .append("iqr", new BsonDouble(value.getFloat64("iqr")))
+                .append("start", new BsonDateTime(key.getInt64("start")))
+                .append("end", new BsonDateTime(key.getInt64("end")));
 
         return doc;
     }
 
-    public static Document accelerometerToDoc(WindowedKey key, DoubleArrayAggegator value){
-        String mongoId = key.getUserID()+"-"+key.getSourceID()+"-"+key.getStart()+"-"+key.getEnd();
+    public static Document accelerometerToDoc(SinkRecord record){
+        Struct key = (Struct) record.key();
+        Struct value = (Struct) record.value();
+
+        String mongoId = key.getString("userID")+"-"+
+                key.getString("sourceID")+"-"+
+                key.getInt64("start")+"-"+
+                key.getInt64("end");
 
         Document doc = new Document("_id", mongoId)
-                .append("user", key.getUserID())
-                .append("source", key.getSourceID())
-                .append("min", accCompToDoc(value.getMin()))
-                .append("max", accCompToDoc(value.getMax()))
-                .append("sum", accCompToDoc(value.getSum()))
-                .append("count", accCompToDoc(value.getCount()))
-                .append("avg", accCompToDoc(value.getAvg()))
-                .append("quartile", accQuartileToDoc(value.getQuartile()))
-                .append("iqr", accCompToDoc(value.getIqr()))
-                .append("start", new BsonDateTime(key.getStart()))
-                .append("end", new BsonDateTime(key.getEnd()));
+                .append("user", key.getString("userID"))
+                .append("source", key.getString("sourceID"))
+                .append("min", accCompToDoc(value.getArray("min")))
+                .append("max", accCompToDoc(value.getArray("max")))
+                .append("sum", accCompToDoc(value.getArray("sum")))
+                .append("count", accCompToDoc(value.getArray("count")))
+                .append("avg", accCompToDoc(value.getArray("avg")))
+                .append("quartile", accQuartileToDoc(value.getArray("quartile")))
+                .append("iqr", accCompToDoc(value.getArray("iqr")))
+                .append("start", new BsonDateTime(key.getInt64("start")))
+                .append("end", new BsonDateTime(key.getInt64("end")));
 
         return doc;
     }

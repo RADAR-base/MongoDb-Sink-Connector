@@ -1,6 +1,5 @@
 package org.radarcns.mongodb;
 
-import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.utils.AppInfoParser;
 import org.apache.kafka.connect.connector.Task;
@@ -42,11 +41,6 @@ public class MongoDbSinkConnector extends SinkConnector {
     @Override
     public void start(Map<String, String> props) {
         connectorConfig = new HashMap<>();
-
-        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,io.confluent.kafka.serializers.KafkaAvroSerializer.class.getName());
-        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,io.confluent.kafka.serializers.KafkaAvroSerializer.class.getName());
-        connectorConfig.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,io.confluent.kafka.serializers.KafkaAvroSerializer.class.getName());
-        connectorConfig.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,io.confluent.kafka.serializers.KafkaAvroSerializer.class.getName());
 
         connectorConfig.put(HOST,props.get(HOST));
         connectorConfig.put(PORT,props.get(PORT));

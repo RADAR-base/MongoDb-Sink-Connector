@@ -72,7 +72,7 @@ public class RollingTimeCount {
         }
 
         //To reduce the error over the entire computation we use double values
-        return Integer.valueOf(Double.valueOf(result).toString());
+        return Double.valueOf(result).intValue();
     }
 
     static class TimeCount {

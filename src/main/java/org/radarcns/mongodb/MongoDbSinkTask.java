@@ -3,6 +3,7 @@ package org.radarcns.mongodb;
 /**
  * Created by Francesco Nobilia on 28/11/2016.
  */
+
 import com.google.common.base.Strings;
 
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
@@ -11,9 +12,6 @@ import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
 import org.bson.Document;
-import org.radarcns.aggregator.DoubleAggegator;
-import org.radarcns.aggregator.DoubleArrayAggegator;
-import org.radarcns.key.WindowedKey;
 import org.radarcns.util.MongoHelper;
 import org.radarcns.util.RollingTimeCount;
 import org.radarcns.util.Utility;
@@ -119,17 +117,12 @@ public class MongoDbSinkTask extends SinkTask {
                 if (buffer.isEmpty()) {
                     log.info("Nothing to flush");
                 } else {
-                    log.info("Flushing buffer");
                     while (!buffer.isEmpty()) {
                         SinkRecord record = buffer.removeFirst();
 
-                        log.info(record.valueSchema().name());
-
                         Document doc = getDoc(record);
 
-                        log.info(doc.toString());
-
-//                        mongoHelper.store(record.topic(), doc);
+                        mongoHelper.store(record.topic(), doc);
                     }
                 }
             } else {
@@ -156,10 +149,7 @@ public class MongoDbSinkTask extends SinkTask {
         switch (aggregator){
             case MongoDbSinkConnector.COLL_DOUBLE_SINGLETON:
                 try {
-                    WindowedKey key = (WindowedKey)record.key();
-                    DoubleAggegator value = (DoubleAggegator)record.value();
-
-                    return Utility.doubleAggToDoc(key,value);
+                    return Utility.doubleAggToDoc(record);
                 }
                 catch (Exception e){
                     log.error("Error while converting {}.",record.toString(),e);
@@ -167,10 +157,7 @@ public class MongoDbSinkTask extends SinkTask {
                 }
             case MongoDbSinkConnector.COLL_DOUBLE_ARRAY:
                 try {
-                    WindowedKey key = (WindowedKey)record.key();
-                    DoubleArrayAggegator value = (DoubleArrayAggegator)record.value();
-
-                    return Utility.accelerometerToDoc(key,value);
+                    return Utility.accelerometerToDoc(record);
                 }
                 catch (Exception e){
                     log.error(e.getMessage());
