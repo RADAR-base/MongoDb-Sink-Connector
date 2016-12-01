@@ -26,7 +26,6 @@ public class MongoDbSinkConnector extends SinkConnector {
     public static final String USR = "username";
     public static final String PWD = "password";
     public static final String DB = "database";
-    public static final String BATCH_SIZE = "batch.size";
     public static final String COLL_DOUBLE_SINGLETON = "double.singleton";
     public static final String COLL_DOUBLE_ARRAY = "double.array";
     public static final String MUST_HAVE = "must.have";
@@ -51,8 +50,6 @@ public class MongoDbSinkConnector extends SinkConnector {
 
         connectorConfig.put(COLL_DOUBLE_SINGLETON,props.get(COLL_DOUBLE_SINGLETON));
         connectorConfig.put(COLL_DOUBLE_ARRAY,props.get(COLL_DOUBLE_ARRAY));
-
-        connectorConfig.put(BATCH_SIZE,props.get(BATCH_SIZE));
 
         Set<String> topicList = Utility.getTopicSet(props.get(TOPICS_CONFIG));
         topicList.stream().forEach(topic -> connectorConfig.put(topic,props.get(topic)));

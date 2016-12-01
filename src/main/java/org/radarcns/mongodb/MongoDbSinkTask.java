@@ -11,20 +11,17 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
-import org.bson.Document;
-import org.radarcns.util.MongoHelper;
-import org.radarcns.util.RollingTimeCount;
+import org.radarcns.util.Monitor;
 import org.radarcns.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
-
-import javax.activation.UnsupportedDataTypeException;
+import java.util.Timer;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * FileStreamSinkTask writes records to stdout or a file.
@@ -33,14 +30,13 @@ public class MongoDbSinkTask extends SinkTask {
 
     private static final Logger log = LoggerFactory.getLogger(MongoDbSinkTask.class);
 
-    private MongoHelper mongoHelper;
+    private AtomicInteger count;
 
-    private LinkedList<SinkRecord> buffer;
-    private int bufferSize;
+    private LinkedBlockingDeque<SinkRecord> buffer;
 
-    private Map<String,String> collectorMapping;
+    private MongoDbWriter writer;
 
-    private RollingTimeCount timeAverage;
+    private Timer timer;
 
     public MongoDbSinkTask() {}
 
@@ -52,50 +48,40 @@ public class MongoDbSinkTask extends SinkTask {
     @Override
     public void start(Map<String, String> props) {
         if(validateConfig(props)){
-            mongoHelper = new MongoHelper(props);
+            buffer = new LinkedBlockingDeque<>();
+            count = new AtomicInteger(0);
 
-            collectorMapping = new HashMap<>();
-            collectorMapping.put(props.get(MongoDbSinkConnector.COLL_DOUBLE_ARRAY),MongoDbSinkConnector.COLL_DOUBLE_ARRAY);
-            collectorMapping.put(props.get(MongoDbSinkConnector.COLL_DOUBLE_SINGLETON),MongoDbSinkConnector.COLL_DOUBLE_SINGLETON);
+            writer = MongoDbWriter.start(props,buffer);
 
-            buffer = new LinkedList<>();
-            bufferSize = Integer.parseInt(props.get(MongoDbSinkConnector.BATCH_SIZE));
-
-            timeAverage = new RollingTimeCount(30000);
+            timer = new Timer();
+            timer.schedule(new Monitor(count,"have been processed",log), 0,30000);
         }
     }
 
     @Override
     public void put(Collection<SinkRecord> sinkRecords) {
         for (SinkRecord record : sinkRecords) {
-            buffer.addLast(record);
-            timeAverage.increment();
-
-            if(buffer.size() == bufferSize){
-                flushBuffer();
+            try {
+                buffer.putFirst(record);
+                count.incrementAndGet();
             }
-        }
+            catch (InterruptedException e) {
+                log.error(e.getMessage());
+                throw new ConnectException("SinkRecord cannot be insert inside the queue.");
+            }
 
-        if(!buffer.isEmpty()){
-            flushBuffer();
-        }
-
-        if(timeAverage.hasCount()) {
-            log.info("{} analysed records", timeAverage.getCount());
         }
     }
 
     @Override
     public void flush(Map<TopicPartition, OffsetAndMetadata> offsets) {
-        flushBuffer();
+        writer.flushing();
     }
 
     @Override
     public void stop() {
-        flushBuffer();
-        if(mongoHelper != null) {
-            mongoHelper.close();
-        }
+        timer.purge();
+        writer.shutdown();
     }
 
     private boolean validateConfig(Map<String, String> config) {
@@ -109,64 +95,6 @@ public class MongoDbSinkTask extends SinkTask {
         }
 
         return true;
-    }
-
-    private void flushBuffer(){
-        try {
-            if (buffer != null) {
-                if (buffer.isEmpty()) {
-                    log.info("Nothing to flush");
-                } else {
-                    while (!buffer.isEmpty()) {
-                        SinkRecord record = buffer.removeFirst();
-
-                        Document doc = getDoc(record);
-
-                        mongoHelper.store(record.topic(), doc);
-                    }
-                }
-            } else {
-                log.info("Buffer is null, a null buffer cannot be flushed");
-            }
-        }
-        catch (UnsupportedDataTypeException e){
-            log.error(e.getMessage());
-        }
-        catch (Exception e){
-            log.error(e.getMessage());
-            mongoHelper.close();
-
-            throw e;
-        }
-    }
-
-    private Document getDoc(SinkRecord record) throws UnsupportedDataTypeException {
-        String aggregator = collectorMapping.get(record.valueSchema().name());
-        if(aggregator == null){
-            throw new UnsupportedDataTypeException(record.valueSchema()+" is not supported yet.");
-        }
-
-        switch (aggregator){
-            case MongoDbSinkConnector.COLL_DOUBLE_SINGLETON:
-                try {
-                    return Utility.doubleAggToDoc(record);
-                }
-                catch (Exception e){
-                    log.error("Error while converting {}.",record.toString(),e);
-                    throw new UnsupportedDataTypeException("Record cannot be converted in Document");
-                }
-            case MongoDbSinkConnector.COLL_DOUBLE_ARRAY:
-                try {
-                    return Utility.accelerometerToDoc(record);
-                }
-                catch (Exception e){
-                    log.error(e.getMessage());
-                    log.error("Error while converting {}.",record.toString(),e);
-                    throw new UnsupportedDataTypeException("Record cannot be converted in Document");
-                }
-            default:
-                throw new UnsupportedDataTypeException("Record cannot be converted in Document. Missing mapping. "+record.toString());
-        }
     }
 
 }
