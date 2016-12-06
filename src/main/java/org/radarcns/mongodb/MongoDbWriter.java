@@ -56,7 +56,7 @@ public class MongoDbWriter implements Runnable{
         collectorMapping.put(props.get(MongoDbSinkConnector.COLL_DOUBLE_SINGLETON),MongoDbSinkConnector.COLL_DOUBLE_SINGLETON);
 
         timer = new Timer();
-        timer.schedule(new Monitor(count,"have been written in MongoDB",log), 0,30000);
+        timer.schedule(new Monitor(count,log,"have been written in MongoDB",buffer), 0,30000);
 
         stopper = new AtomicBoolean(false);
 

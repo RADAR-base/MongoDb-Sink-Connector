@@ -54,7 +54,10 @@ $ export CLASSPATH=export CLASSPATH=mongoconnector-1.0.jar
   ```shell
     $ /bin/connect-distributed cluster.properties sink.properties
   ```
-7. stop your connector using `CTRL-C` 
+7. stop your connector using `CTRL-C`
+ 
+### Tuning
+The only available setting is the number of records returned in a single call to `poll()` (i.e. `consumer.max.poll.records` param inside `standalone.properties`)
 
 ### Note
 Connectors can be run inside any machine where Kafka has been installed. Therefore, you can fire them also inside a machine that does not host a kafka broker.

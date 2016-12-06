@@ -28,6 +28,7 @@ public class MongoDbSinkConnector extends SinkConnector {
     public static final String DB = "database";
     public static final String COLL_DOUBLE_SINGLETON = "double.singleton";
     public static final String COLL_DOUBLE_ARRAY = "double.array";
+
     public static final String MUST_HAVE = "must.have";
 
     Map<String, String> connectorConfig;

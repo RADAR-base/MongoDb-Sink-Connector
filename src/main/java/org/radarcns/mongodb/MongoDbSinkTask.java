@@ -23,9 +23,6 @@ import java.util.Timer;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * FileStreamSinkTask writes records to stdout or a file.
- */
 public class MongoDbSinkTask extends SinkTask {
 
     private static final Logger log = LoggerFactory.getLogger(MongoDbSinkTask.class);
