@@ -1,0 +1,5 @@
+language: java
+after_script:
+  - ./gradlew sendCoverageToCodacy
+jdk:
+  - oraclejdk8

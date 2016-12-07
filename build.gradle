@@ -3,6 +3,7 @@ plugins {
     id 'java'
     id 'idea'
     id 'com.commercehub.gradle.plugin.avro-base' version '0.8.0'
+    id 'jacoco'
 }
 
 version = '1.0'
@@ -16,14 +17,16 @@ ext.confluentVersion = '3.0.1'
 ext.mongodbVersion = '3.3.0'
 ext.guavaVersion = '12.0'
 
+configurations { codacy }
+
 // In this section you declare where to find the dependencies of your project
 repositories {
     // Use 'jcenter' for resolving your dependencies.
     // You can declare any Maven/Ivy/file repository here.
     jcenter()
-    maven {
-        url 'http://packages.confluent.io/maven/'
-    }
+    maven { url 'http://packages.confluent.io/maven/' }
+    maven { url 'https://jitpack.io' }
+    maven { url 'http://dl.bintray.com/typesafe/maven-releases' }
 }
 
 // In this section you declare the dependencies for your production and test code
@@ -36,6 +39,8 @@ dependencies {
     compile group: 'io.confluent', name: 'kafka-avro-serializer', version: confluentVersion
     compile group: 'org.mongodb', name: 'mongo-java-driver', version: mongodbVersion
     compile group: 'com.google.guava', name: 'guava', version: guavaVersion
+
+    codacy 'com.github.codacy:codacy-coverage-reporter:-SNAPSHOT'
 }
 
 task generateAvro(type: com.commercehub.gradle.plugin.avro.GenerateAvroJavaTask) {
@@ -59,6 +64,20 @@ jar {
     from {
         configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
     }
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled true
+        csv.enabled false
+        html.enabled false
+    }
+}
+
+task sendCoverageToCodacy(type: JavaExec, dependsOn: jacocoTestReport) {
+    main = 'com.codacy.CodacyCoverageReporter'
+    classpath = configurations.codacy
+    args = ['-l', 'Java', '-r', "${buildDir}/reports/jacoco/test/jacocoTestReport.xml"]
 }
 
 task wrapper(type: Wrapper) {
