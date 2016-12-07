@@ -85,7 +85,7 @@ public class MongoDbWriter extends Thread {
     private void store(SinkRecord record, int tries) {
         try {
             Document doc = getDoc(record);
-            mongoHelper.storeIgnoreError(record.topic(), doc);
+            mongoHelper.store(record.topic(), doc);
             count.incrementAndGet();
         } catch (UnsupportedDataTypeException e) {
             log.error("Unsupported MongoDB data type in data from Kafka. Skipping record {}", record, e);

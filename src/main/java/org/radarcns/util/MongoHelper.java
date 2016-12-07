@@ -117,15 +117,9 @@ public class MongoHelper {
         }
     }
 
-    public void storeIgnoreError(String topic, Document doc) {
+    public void store(String topic, Document doc) throws MongoException {
         MongoCollection<Document> collection = getCollection(mongoClient, dbName, mapping.get(topic));
 
-        try {
-            collection.replaceOne(eq("_id", doc.get("_id")), doc, (new UpdateOptions()).upsert(true));
-        } catch (MongoException e){
-            log.error("Failed to insert record in MongoDB", e);
-            log.error("Error on writing [{} - {}] in {} collection",
-                    topic, doc, collection.getNamespace().getCollectionName());
-        }
+        collection.replaceOne(eq("_id", doc.get("_id")), doc, (new UpdateOptions()).upsert(true));
     }
 }
