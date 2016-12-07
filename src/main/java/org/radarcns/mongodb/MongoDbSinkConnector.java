@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,8 +31,10 @@ public class MongoDbSinkConnector extends SinkConnector {
     public static final String COLL_DOUBLE_ARRAY = "double.array";
 
     public static final String MUST_HAVE = "must.have";
+    public static final String BUFFER_CAPACITY = "buffer.capacity";
 
-    Map<String, String> connectorConfig;
+
+    private Map<String, String> connectorConfig;
 
     @Override
     public String version() {
@@ -42,21 +45,19 @@ public class MongoDbSinkConnector extends SinkConnector {
     public void start(Map<String, String> props) {
         connectorConfig = new HashMap<>();
 
-        connectorConfig.put(HOST,props.get(HOST));
-        connectorConfig.put(PORT,props.get(PORT));
+        connectorConfig.put(HOST, props.get(HOST));
+        connectorConfig.put(PORT, props.get(PORT));
 
-        connectorConfig.put(USR,props.get(USR));
-        connectorConfig.put(PWD,props.get(PWD));
-        connectorConfig.put(DB,props.get(DB));
+        connectorConfig.put(USR, props.get(USR));
+        connectorConfig.put(PWD, props.get(PWD));
+        connectorConfig.put(DB, props.get(DB));
 
-        connectorConfig.put(COLL_DOUBLE_SINGLETON,props.get(COLL_DOUBLE_SINGLETON));
-        connectorConfig.put(COLL_DOUBLE_ARRAY,props.get(COLL_DOUBLE_ARRAY));
+        for (String topic : Utility.stringToSet(props.get(TOPICS_CONFIG))) {
+            connectorConfig.put(topic, props.get(topic));
+        }
+        connectorConfig.put(TOPICS_CONFIG, props.get(TOPICS_CONFIG));
 
-        Set<String> topicList = Utility.getTopicSet(props.get(TOPICS_CONFIG));
-        topicList.stream().forEach(topic -> connectorConfig.put(topic,props.get(topic)));
-        connectorConfig.put(TOPICS_CONFIG,props.get(TOPICS_CONFIG));
-
-        connectorConfig.put(MUST_HAVE,Utility.keyListToString(connectorConfig));
+        connectorConfig.put(MUST_HAVE, Utility.keyListToString(connectorConfig));
 
         log.info(Utility.convertConfigToString(connectorConfig));
     }
@@ -68,14 +69,9 @@ public class MongoDbSinkConnector extends SinkConnector {
 
     @Override
     public List<Map<String, String>> taskConfigs(int maxTasks) {
-        ArrayList<Map<String, String>> configs = new ArrayList<>();
-        for (int i = 0; i < maxTasks; i++) {
-            configs.add(connectorConfig);
-        }
+        log.info("At most {} will be started", maxTasks);
 
-        log.info("At most {} will be started",maxTasks);
-
-        return configs;
+        return Collections.nCopies(maxTasks, connectorConfig);
     }
 
     @Override
