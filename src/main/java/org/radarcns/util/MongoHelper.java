@@ -18,7 +18,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static com.mongodb.client.model.Filters.eq;
 import static java.util.Collections.singletonList;

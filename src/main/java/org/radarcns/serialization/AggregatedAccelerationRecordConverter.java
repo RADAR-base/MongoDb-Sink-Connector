@@ -3,7 +3,6 @@ package org.radarcns.serialization;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.bson.BsonDateTime;
-import org.bson.BsonDouble;
 import org.bson.Document;
 import org.radarcns.util.Utility;
 
@@ -12,7 +11,6 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.radarcns.mongodb.MongoDbSinkConnector.COLL_DOUBLE_ARRAY;
-import static org.radarcns.mongodb.MongoDbSinkConnector.COLL_DOUBLE_SINGLETON;
 
 public class AggregatedAccelerationRecordConverter implements RecordConverter<Document> {
     @Override

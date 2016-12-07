@@ -12,8 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.radarcns.mongodb.MongoDbSinkConnector.BUFFER_CAPACITY;
-
 /**
  * Created by Francesco Nobilia on 28/11/2016.
  */
