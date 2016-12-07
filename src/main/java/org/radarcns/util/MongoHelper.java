@@ -34,23 +34,24 @@ public class MongoHelper {
     private MongoClient mongoClient;
     private String dbName;
 
-    private Map<String,String> mapping;
+    private Map<String, String> mapping;
 
     public MongoHelper(Map<String, String> config){
         initClient(config);
 
         mapping = new HashMap<>();
-        Set<String> topicList = Utility.getTopicSet(config.get(TOPICS_CONFIG));
-        topicList.stream().forEach(topic -> mapping.put(topic, config.get(topic)));
+        for (String topic : Utility.stringToSet(config.get(TOPICS_CONFIG))) {
+            mapping.put(topic, config.get(topic));
+        }
     }
 
     public void initClient(Map<String, String> config){
         try {
             List<MongoCredential> credentials = getMongoDBUser(config);
 
-            mongoClient = new MongoClient(getMongoDBHosts(config),credentials);
+            mongoClient = new MongoClient(getMongoDBHosts(config), credentials);
 
-            if (checkMongoConnection(mongoClient,credentials)) {
+            if (checkMongoConnection(mongoClient, credentials)) {
                 log.info("MongoDB connection established");
 
                 dbName = config.get(MongoDbSinkConnector.DB);
@@ -62,7 +63,7 @@ public class MongoHelper {
             }
 
             log.error(e.getMessage());
-            throw new ConnectException("MongoDb client cannot be created.",e);
+            throw new ConnectException("MongoDb client cannot be created.", e);
         }
     }
 
@@ -80,10 +81,10 @@ public class MongoHelper {
                 mongoClient.close();
             }
 
-            log.error("Error during connection test",e);
+            log.error("Error during connection test", e);
         }
 
-        log.info("MongoDB connection is {}",flag.toString());
+        log.info("MongoDB connection is {}", flag.toString());
 
         return flag;
     }
@@ -97,7 +98,7 @@ public class MongoHelper {
 
     private List<ServerAddress> getMongoDBHosts(Map<String, String> config){
         List<ServerAddress> mongoHostsTemp = new LinkedList<>();
-        mongoHostsTemp.add(new ServerAddress(config.get(MongoDbSinkConnector.HOST),Integer.valueOf(config.get(MongoDbSinkConnector.PORT))));
+        mongoHostsTemp.add(new ServerAddress(config.get(MongoDbSinkConnector.HOST), Integer.valueOf(config.get(MongoDbSinkConnector.PORT))));
         return mongoHostsTemp;
     }
 
@@ -116,15 +117,15 @@ public class MongoHelper {
         }
     }
 
-    public void store(String topic, Document doc){
-        MongoCollection<Document> collection = getCollection(mongoClient,dbName,mapping.get(topic));
+    public void storeIgnoreError(String topic, Document doc) {
+        MongoCollection<Document> collection = getCollection(mongoClient, dbName, mapping.get(topic));
 
-        try{
-            collection.replaceOne(eq("_id", doc.get("_id")),doc,(new UpdateOptions()).upsert(true));
+        try {
+            collection.replaceOne(eq("_id", doc.get("_id")), doc, (new UpdateOptions()).upsert(true));
         } catch (MongoException e){
             log.error("Failed to insert record in MongoDB", e);
             log.error("Error on writing [{} - {}] in {} collection",
-                    collection.getNamespace().getCollectionName().toString());
+                    topic, doc, collection.getNamespace().getCollectionName());
         }
     }
 }
