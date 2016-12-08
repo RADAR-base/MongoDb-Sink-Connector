@@ -31,7 +31,7 @@ public class MongoDbSinkConnector extends SinkConnector {
     public static final String COLL_DOUBLE_ARRAY = "double.array";
     public static final String BUFFER_CAPACITY = "buffer.capacity";
 
-    public static String[] REQUIRED_PROPERTIES = {
+    public static final String[] REQUIRED_PROPERTIES = {
         MONGO_HOST, MONGO_PORT, MONGO_USERNAME, MONGO_PASSWORD, MONGO_DATABASE, TOPICS_CONFIG,
     };
 

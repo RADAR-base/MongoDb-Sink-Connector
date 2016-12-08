@@ -57,7 +57,8 @@ public class MongoDbWriter extends Thread implements Closeable {
         this.buffer = buffer;
         count = new AtomicInteger(0);
 
-        timer.schedule(new Monitor(log, count, "have been written in MongoDB", this.buffer), 0, 30000);
+        Monitor monitor = new Monitor(log, count, "have been written in MongoDB", this.buffer);
+        timer.schedule(monitor, 0, 30000);
 
         latestOffsets = new HashMap<>();
         stopping = new AtomicBoolean(false);
