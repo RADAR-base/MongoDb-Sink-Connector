@@ -6,11 +6,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import javax.annotation.Nonnull;
 
 /**
  * Created by Francesco Nobilia on 28/11/2016.
@@ -18,7 +21,7 @@ import java.util.Set;
 public class Utility {
     private final static Logger log = LoggerFactory.getLogger(Utility.class);
 
-    public static String convertConfigToString(Map<String, String> map){
+    public static String convertConfigToString(@Nonnull Map<String, String> map){
         String ret = "User configuration are: ";
         for (Map.Entry<String, String> entry : map.entrySet()) {
             ret += "\n\t" + entry.getKey() + ": " + entry.getValue();
@@ -26,15 +29,18 @@ public class Utility {
         return ret;
     }
 
-    public static String keyListToString(Map<String, String> map){
+    public static String keyListToString(@Nonnull Map<String, String> map){
         return String.join(",", map.keySet());
     }
 
-    public static Set<String> stringToSet(String value){
+    public static Set<String> stringToSet(@Nonnull String value){
+        if (value.isEmpty()) {
+            return Collections.emptySet();
+        }
         return new HashSet<>(Arrays.asList(value.split(",")));
     }
 
-    public static LinkedList<Document> extractQuartile(List<Double> component){
+    public static LinkedList<Document> extractQuartile(@Nonnull List<Double> component){
         LinkedList<Document> quartile = new LinkedList<>();
 
         quartile.addLast(new Document("25", new BsonDouble(component.get(0))));
@@ -44,7 +50,7 @@ public class Utility {
         return quartile;
     }
 
-    public static int getInt(Map<String, String> props, String key, int defaultValue) {
+    public static int getInt(@Nonnull Map<String, String> props, @Nonnull String key, int defaultValue) {
         String valueString = props.get(key);
         if (valueString != null) {
             try {
