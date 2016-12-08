@@ -1,5 +1,7 @@
 package org.radarcns.util;
 
+import com.google.common.base.Strings;
+
 import org.apache.kafka.connect.data.Struct;
 import org.bson.BsonDouble;
 import org.bson.Document;
@@ -7,12 +9,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.annotation.Nonnull;
 
@@ -34,21 +33,18 @@ public class Utility {
         return String.join(",", map.keySet());
     }
 
-    public static Set<String> stringToSet(@Nonnull String value){
+    public static String[] splitByComma(@Nonnull String value){
         if (value.isEmpty()) {
-            return Collections.emptySet();
+            return new String[0];
         }
-        return new HashSet<>(Arrays.asList(value.split(",")));
+        return value.split(",");
     }
 
-    public static LinkedList<Document> extractQuartile(@Nonnull List<Double> component){
-        LinkedList<Document> quartile = new LinkedList<>();
-
-        quartile.addLast(new Document("25", new BsonDouble(component.get(0))));
-        quartile.addLast(new Document("50", new BsonDouble(component.get(1))));
-        quartile.addLast(new Document("75", new BsonDouble(component.get(2))));
-
-        return quartile;
+    public static List<Document> extractQuartile(@Nonnull List<Double> component){
+        return Arrays.asList(
+                new Document("25", new BsonDouble(component.get(0))),
+                new Document("50", new BsonDouble(component.get(1))),
+                new Document("75", new BsonDouble(component.get(2))));
     }
 
     public static int getInt(@Nonnull Map<String, String> props, @Nonnull String key,
@@ -68,5 +64,22 @@ public class Utility {
     public static String intervalKeyToMongoKey(@Nonnull Struct key) {
         return key.get("userID") + "-" + key.get("sourceID") + "-"
                 + key.get("start") + "-"+ key.get("end");
+    }
+
+    public static Map<String, String> parseArrayConfig(Map<String, String> config, String key) {
+        String value = config.get(key);
+        if (value == null) {
+            return null;
+        }
+
+        Map<String, String> properties = new HashMap<>();
+        for (String returnKey : splitByComma(value)) {
+            String returnValue = config.get(returnKey);
+            if (Strings.isNullOrEmpty(returnValue)) {
+                return null;
+            }
+            properties.put(returnKey, returnValue);
+        }
+        return properties;
     }
 }

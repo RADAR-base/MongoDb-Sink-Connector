@@ -6,11 +6,11 @@ import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.bson.Document;
 import org.radarcns.serialization.RecordConverter;
-import org.radarcns.util.MongoHelper;
 import org.radarcns.util.Monitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -24,29 +24,50 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.activation.UnsupportedDataTypeException;
 
 /**
- * Created by Francesco Nobilia on 30/11/2016.
+ * A thread that reads Kafka SinkRecords from a buffer and writes them to a MongoDB database.
+ *
+ * It keeps track of the latest offsets of records that have been written, so that a flush operation
+ * can be done against specific Kafka offsets.
  */
-public class MongoDbWriter extends Thread {
+public class MongoDbWriter extends Thread implements Closeable {
     private static final Logger log = LoggerFactory.getLogger(MongoDbWriter.class);
+    private static final int NUM_RETRIES = 3;
 
     private final AtomicInteger count;
-    private final MongoHelper mongoHelper;
+    private final MongoWrapper mongoHelper;
     private final Map<String, RecordConverter<Document>> converterMapping;
     private final BlockingQueue<SinkRecord> buffer;
-    private static final int NUM_RETRIES = 3;
 
     private final AtomicBoolean stopping;
     private final Map<TopicPartition, Long> latestOffsets;
     private Throwable exception;
 
+    /**
+     * Creates a writer with a MongoDB client.
+     *
+     * @param props sink properties
+     * @param buffer buffer
+     * @param converters converters from records to a MongoDB document
+     * @param timer timer to run a monitoring task on
+     * @throws ConnectException if cannot connect to the MongoDB database.
+     */
     public MongoDbWriter(Map<String, String> props, BlockingQueue<SinkRecord> buffer,
-                         List<RecordConverter<Document>> converters) {
+                         List<RecordConverter<Document>> converters, Timer timer)
+            throws ConnectException {
         this.buffer = buffer;
-        latestOffsets = new HashMap<>();
         count = new AtomicInteger(0);
+
+        timer.schedule(new Monitor(log, count, "have been written in MongoDB", this.buffer), 0, 30000);
+
+        latestOffsets = new HashMap<>();
         stopping = new AtomicBoolean(false);
 
-        mongoHelper = new MongoHelper(props);
+        mongoHelper = new MongoWrapper(props);
+
+        if (!mongoHelper.checkConnection()) {
+            mongoHelper.close();
+            throw new ConnectException("Cannot connect to MongoDB database");
+        }
 
         converterMapping = new HashMap<>();
         for (RecordConverter<Document> converter : converters) {
@@ -60,9 +81,6 @@ public class MongoDbWriter extends Thread {
 
     @Override
     public void run() {
-        Timer timer = new Timer();
-        timer.schedule(new Monitor(log, count, "have been written in MongoDB", buffer), 0, 30000);
-
         while (!stopping.get()) {
             SinkRecord record;
             try {
@@ -79,7 +97,6 @@ public class MongoDbWriter extends Thread {
             mongoHelper.close();
         }
 
-        timer.purge();
         log.info("Writer DONE!");
     }
 
@@ -124,11 +141,17 @@ public class MongoDbWriter extends Thread {
             return converter.convert(record);
         } catch (Exception e) {
             log.error("Error while converting {}.", record, e);
-            throw new UnsupportedDataTypeException("Record cannot be converted in Document");
+            throw new UnsupportedDataTypeException("Record cannot be converted to a Document");
         }
     }
 
-    public synchronized void flush(Map<TopicPartition, OffsetAndMetadata> offsets) {
+    /**
+     * Flushes the buffer.
+     * @param offsets offsets up to which to flush.
+     * @throws ConnectException if the writer is interrupted.
+     */
+    public synchronized void flush(Map<TopicPartition, OffsetAndMetadata> offsets)
+            throws ConnectException {
         if (exception != null) {
             log.error("MongoDB writer is on illegal state");
             throw new ConnectException("MongoDB writer is on illegal state", exception);
@@ -157,7 +180,14 @@ public class MongoDbWriter extends Thread {
         }
     }
 
-    public void shutdown() {
+    /**
+     * Closes the writer.
+     *
+     * This will eventually close the thread but it will not wait for it. It will also not flush
+     * the buffer.
+     */
+    @Override
+    public void close() {
         log.info("Writer is shutting down");
         stopping.set(true);
         interrupt();

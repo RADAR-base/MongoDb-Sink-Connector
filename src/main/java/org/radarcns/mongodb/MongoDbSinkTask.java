@@ -1,10 +1,7 @@
 package org.radarcns.mongodb;
 
-import com.google.common.base.Strings;
-
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
 import org.bson.Document;
@@ -28,20 +25,23 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.radarcns.mongodb.MongoDbSinkConnector.BUFFER_CAPACITY;
 
 /**
- * Created by Francesco Nobilia on 28/11/2016.
+ * Task to handle data coming from Kafka and send it to MongoDB.
+ *
+ * It uses a buffer and a separate MongoDbWriter thread to achieve asynchronous writes. The buffer
+ * is of fixed size (defined by {@link MongoDbSinkConnector#BUFFER_CAPACITY}) so if the MongoDB
+ * connection is slower than data is being put from Kafka, the buffer will fill up. The put
+ * operation will then at some point timeout.
  */
 public class MongoDbSinkTask extends SinkTask {
+    // Assuming record sizes of 1 kB, we default to a 20 MB buffer
+    private static final int DEFAULT_BUFFER_CAPACITY = 20_000;
 
     private static final Logger log = LoggerFactory.getLogger(MongoDbSinkTask.class);
 
     private final AtomicInteger count;
 
     private BlockingQueue<SinkRecord> buffer;
-    // Assuming record sizes of 1 kB, we default to a 20 MB buffer
-    private static final int DEFAULT_BUFFER_CAPACITY = 20_000;
-
     private MongoDbWriter writer;
-
     private Timer timer;
 
     public MongoDbSinkTask() {
@@ -55,19 +55,18 @@ public class MongoDbSinkTask extends SinkTask {
 
     @Override
     public void start(Map<String, String> props) {
-        if(validateConfig(props)){
-            int bufferCapacity = Utility.getInt(props, BUFFER_CAPACITY, DEFAULT_BUFFER_CAPACITY);
-            buffer = new ArrayBlockingQueue<>(bufferCapacity);
+        int bufferCapacity = Utility.getInt(props, BUFFER_CAPACITY, DEFAULT_BUFFER_CAPACITY);
+        buffer = new ArrayBlockingQueue<>(bufferCapacity);
 
-            List<RecordConverter<Document>> mongoConverters = Arrays.asList(
-                    new AggregatedAccelerationRecordConverter(),
-                    new DoubleAggregatedRecordConverter());
-            writer = new MongoDbWriter(props, buffer, mongoConverters);
-            writer.start();
+        List<RecordConverter<Document>> mongoConverters = Arrays.asList(
+                new AggregatedAccelerationRecordConverter(),
+                new DoubleAggregatedRecordConverter());
 
-            timer = new Timer();
-            timer.schedule(new Monitor(log, count, "have been processed"), 0, 30000);
-        }
+        timer = new Timer();
+        timer.schedule(new Monitor(log, count, "have been processed"), 0, 30000);
+
+        writer = new MongoDbWriter(props, buffer, mongoConverters, timer);
+        writer.start();
     }
 
     @Override
@@ -85,19 +84,7 @@ public class MongoDbSinkTask extends SinkTask {
 
     @Override
     public void stop() {
+        writer.close();
         timer.purge();
-        writer.shutdown();
-    }
-
-    private boolean validateConfig(Map<String, String> config) {
-        for (String key : Utility.stringToSet(config.get(MongoDbSinkConnector.MUST_HAVE))) {
-            if (Strings.isNullOrEmpty(config.get(key))){
-                log.error("MongoDbSinkTask cannot be created. {} is not defined", key);
-                throw new ConnectException("MongoDbSinkTask cannot be created. " + key
-                        + " is not defined");
-            }
-        }
-
-        return true;
     }
 }

@@ -10,6 +10,8 @@ import org.radarcns.util.Utility;
 import java.util.Collection;
 import java.util.Collections;
 
+import javax.annotation.Nonnull;
+
 import static org.radarcns.mongodb.MongoDbSinkConnector.COLL_DOUBLE_SINGLETON;
 
 public class DoubleAggregatedRecordConverter implements RecordConverter<Document> {
@@ -19,7 +21,7 @@ public class DoubleAggregatedRecordConverter implements RecordConverter<Document
     }
 
     @Override
-    public Document convert(SinkRecord record) {
+    public Document convert(@Nonnull SinkRecord record) {
         Struct key = (Struct) record.key();
         Struct value = (Struct) record.value();
 

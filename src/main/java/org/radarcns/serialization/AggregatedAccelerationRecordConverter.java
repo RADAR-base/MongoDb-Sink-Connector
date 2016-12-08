@@ -10,6 +10,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import javax.annotation.Nonnull;
+
 import static org.radarcns.mongodb.MongoDbSinkConnector.COLL_DOUBLE_ARRAY;
 
 public class AggregatedAccelerationRecordConverter implements RecordConverter<Document> {
@@ -19,7 +21,7 @@ public class AggregatedAccelerationRecordConverter implements RecordConverter<Do
     }
 
     @Override
-    public Document convert(SinkRecord record) {
+    public Document convert(@Nonnull SinkRecord record) {
         Struct key = (Struct) record.key();
         Struct value = (Struct) record.value();
 
