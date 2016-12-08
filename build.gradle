@@ -87,6 +87,7 @@ jacocoTestReport {
 task downloadDependencies(type: Exec) {
     configurations.testRuntime.files
     configurations.codacy.files
+    configurations.jacoco.files
     commandLine 'echo', 'Downloaded all dependencies'
 }
 
