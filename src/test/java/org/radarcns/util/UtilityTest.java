@@ -9,10 +9,6 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.TreeMap;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 
 public class UtilityTest {
@@ -35,20 +31,6 @@ public class UtilityTest {
         testMap.put("prop2", "something");
         testMap.put("prop3", "something");
         assertEquals("prop1,prop2,prop3", Utility.keyListToString(testMap));
-    }
-
-    @Test
-    public void emptyStringToSet() throws Exception {
-        assertThat(Utility.stringToSet(""), is(empty()));
-    }
-    @Test
-    public void singletonStringToSet() throws Exception {
-        assertThat(Utility.stringToSet("something"), containsInAnyOrder("something"));
-    }
-
-    @Test
-    public void multipleStringToSet() throws Exception {
-        assertThat(Utility.stringToSet("prop1,prop2,prop3"), containsInAnyOrder("prop1", "prop2", "prop3"));
     }
 
     @Test
