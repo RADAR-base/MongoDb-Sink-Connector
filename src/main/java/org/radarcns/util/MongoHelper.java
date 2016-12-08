@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 
 import static com.mongodb.client.model.Filters.eq;
-import static java.util.Collections.singletonList;
 import static org.apache.kafka.connect.sink.SinkTask.TOPICS_CONFIG;
 
 /**
@@ -29,11 +28,10 @@ import static org.apache.kafka.connect.sink.SinkTask.TOPICS_CONFIG;
 public class MongoHelper {
 
     private final Logger log = LoggerFactory.getLogger(MongoHelper.class);
+    private final String dbName;
+    private final Map<String, String> mapping;
 
     private MongoClient mongoClient;
-    private String dbName;
-
-    private Map<String, String> mapping;
 
     public MongoHelper(Map<String, String> config){
         initClient(config);
@@ -42,6 +40,7 @@ public class MongoHelper {
         for (String topic : Utility.stringToSet(config.get(TOPICS_CONFIG))) {
             mapping.put(topic, config.get(topic));
         }
+        dbName = config.get(MongoDbSinkConnector.DB);
     }
 
     public void initClient(Map<String, String> config){
@@ -52,8 +51,6 @@ public class MongoHelper {
 
             if (checkMongoConnection(mongoClient, credentials)) {
                 log.info("MongoDB connection established");
-
-                dbName = config.get(MongoDbSinkConnector.DB);
             }
         }
         catch (com.mongodb.MongoSocketOpenException e){
@@ -90,7 +87,7 @@ public class MongoHelper {
     }
 
     private List<MongoCredential> getMongoDBUser(Map<String, String> config){
-        return singletonList(MongoCredential.createCredential(
+        return Collections.singletonList(MongoCredential.createCredential(
                 config.get(MongoDbSinkConnector.USR),
                 config.get(MongoDbSinkConnector.DB),
                 config.get(MongoDbSinkConnector.PWD).toCharArray()));
