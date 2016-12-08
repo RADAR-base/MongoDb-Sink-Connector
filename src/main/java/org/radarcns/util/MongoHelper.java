@@ -14,8 +14,8 @@ import org.radarcns.mongodb.MongoDbSinkConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -66,7 +66,8 @@ public class MongoHelper {
         }
     }
 
-    private boolean checkMongoConnection(MongoClient mongoClient, List<MongoCredential> credentials){
+    private boolean checkMongoConnection(MongoClient mongoClient,
+                                         List<MongoCredential> credentials) {
         Boolean flag = true;
         try {
             for(MongoCredential user : credentials) {
@@ -96,12 +97,13 @@ public class MongoHelper {
     }
 
     private List<ServerAddress> getMongoDBHosts(Map<String, String> config){
-        List<ServerAddress> mongoHostsTemp = new LinkedList<>();
-        mongoHostsTemp.add(new ServerAddress(config.get(MongoDbSinkConnector.HOST), Integer.valueOf(config.get(MongoDbSinkConnector.PORT))));
-        return mongoHostsTemp;
+        String host = config.get(MongoDbSinkConnector.HOST);
+        int port = Integer.parseInt(config.get(MongoDbSinkConnector.PORT));
+        return Collections.singletonList(new ServerAddress(host, port));
     }
 
-    private MongoCollection<Document> getCollection(MongoClient mongoClient, String dbName, String collection){
+    private MongoCollection<Document> getCollection(MongoClient mongoClient, String dbName,
+                                                    String collection){
         MongoDatabase database = mongoClient.getDatabase(dbName);
         return database.getCollection(collection);
     }
@@ -117,7 +119,8 @@ public class MongoHelper {
     }
 
     public void store(String topic, Document doc) throws MongoException {
-        MongoCollection<Document> collection = getCollection(mongoClient, dbName, mapping.get(topic));
+        MongoCollection<Document> collection = getCollection(
+                mongoClient, dbName, mapping.get(topic));
 
         collection.replaceOne(eq("_id", doc.get("_id")), doc, (new UpdateOptions()).upsert(true));
     }

@@ -33,13 +33,14 @@ public class MongoDbWriter extends Thread {
     private final MongoHelper mongoHelper;
     private final Map<String, RecordConverter<Document>> converterMapping;
     private final BlockingQueue<SinkRecord> buffer;
-    private final static int NUM_RETRIES = 3;
+    private static final int NUM_RETRIES = 3;
 
     private final AtomicBoolean stopping;
     private final Map<TopicPartition, Long> latestOffsets;
     private Throwable exception;
 
-    public MongoDbWriter(Map<String, String> props, BlockingQueue<SinkRecord> buffer, List<RecordConverter<Document>> converters) {
+    public MongoDbWriter(Map<String, String> props, BlockingQueue<SinkRecord> buffer,
+                         List<RecordConverter<Document>> converters) {
         this.buffer = buffer;
         latestOffsets = new HashMap<>();
         count = new AtomicInteger(0);
@@ -60,7 +61,7 @@ public class MongoDbWriter extends Thread {
     @Override
     public void run() {
         Timer timer = new Timer();
-        timer.schedule(new Monitor(count, log, "have been written in MongoDB", buffer), 0, 30000);
+        timer.schedule(new Monitor(log, count, "have been written in MongoDB", buffer), 0, 30000);
 
         while (!stopping.get()) {
             SinkRecord record;
@@ -88,7 +89,8 @@ public class MongoDbWriter extends Thread {
             mongoHelper.store(record.topic(), doc);
             count.incrementAndGet();
         } catch (UnsupportedDataTypeException e) {
-            log.error("Unsupported MongoDB data type in data from Kafka. Skipping record {}", record, e);
+            log.error("Unsupported MongoDB data type in data from Kafka. Skipping record {}",
+                    record, e);
             setException(e);
         } catch (Exception e){
             tries++;
@@ -103,7 +105,8 @@ public class MongoDbWriter extends Thread {
     }
 
     private synchronized void processedRecord(SinkRecord record) {
-        latestOffsets.put(new TopicPartition(record.topic(), record.kafkaPartition()), record.kafkaOffset());
+        TopicPartition topicPartition = new TopicPartition(record.topic(), record.kafkaPartition());
+        latestOffsets.put(topicPartition,record.kafkaOffset());
         notify();
     }
 

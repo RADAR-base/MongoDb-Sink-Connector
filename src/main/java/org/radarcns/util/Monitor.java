@@ -6,6 +6,8 @@ import java.util.Collection;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.annotation.Nonnull;
+
 /**
  * Created by Francesco Nobilia on 28/11/2016.
  */
@@ -14,15 +16,14 @@ public class Monitor extends TimerTask {
     private final Logger log;
     private final String message;
 
-    private Collection<?> buffer;
+    private final Collection<?> buffer;
 
-    public Monitor(AtomicInteger count, String message, Logger log) {
-        this.count = count;
-        this.message = message;
-        this.log = log;
+    public Monitor(@Nonnull Logger log, @Nonnull AtomicInteger count, String message) {
+        this(log, count, message, null);
     }
 
-    public Monitor(AtomicInteger count, Logger log, String message, Collection<?> buffer) {
+    public Monitor(@Nonnull Logger log, @Nonnull AtomicInteger count, String message,
+                   Collection<?> buffer) {
         this.count = count;
         this.log = log;
         this.message = message;
@@ -35,7 +36,8 @@ public class Monitor extends TimerTask {
             log.info("{} {}", count.getAndSet(0), message);
         }
         else {
-            log.info("{} {} {} records need to be processed.", count.getAndSet(0), message, buffer.size());
+            log.info("{} {} {} records need to be processed.", count.getAndSet(0), message,
+                    buffer.size());
         }
     }
 }

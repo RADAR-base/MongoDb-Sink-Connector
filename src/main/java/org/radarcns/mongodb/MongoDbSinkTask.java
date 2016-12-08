@@ -38,7 +38,7 @@ public class MongoDbSinkTask extends SinkTask {
 
     private BlockingQueue<SinkRecord> buffer;
     // Assuming record sizes of 1 kB, we default to a 20 MB buffer
-    private final static int DEFAULT_BUFFER_CAPACITY = 20_000;
+    private static final int DEFAULT_BUFFER_CAPACITY = 20_000;
 
     private MongoDbWriter writer;
 
@@ -66,7 +66,7 @@ public class MongoDbSinkTask extends SinkTask {
             writer.start();
 
             timer = new Timer();
-            timer.schedule(new Monitor(count, "have been processed", log), 0, 30000);
+            timer.schedule(new Monitor(log, count, "have been processed"), 0, 30000);
         }
     }
 
@@ -93,7 +93,8 @@ public class MongoDbSinkTask extends SinkTask {
         for (String key : Utility.stringToSet(config.get(MongoDbSinkConnector.MUST_HAVE))) {
             if (Strings.isNullOrEmpty(config.get(key))){
                 log.error("MongoDbSinkTask cannot be created. {} is not defined", key);
-                throw new ConnectException("MongoDbSinkTask cannot be created. " + key + " is not defined");
+                throw new ConnectException("MongoDbSinkTask cannot be created. " + key +
+                        " is not defined");
             }
         }
 

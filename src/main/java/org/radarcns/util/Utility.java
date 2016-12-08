@@ -19,7 +19,7 @@ import javax.annotation.Nonnull;
  * Created by Francesco Nobilia on 28/11/2016.
  */
 public class Utility {
-    private final static Logger log = LoggerFactory.getLogger(Utility.class);
+    private static final Logger log = LoggerFactory.getLogger(Utility.class);
 
     public static String convertConfigToString(@Nonnull Map<String, String> map){
         String ret = "User configuration are: ";
@@ -50,7 +50,8 @@ public class Utility {
         return quartile;
     }
 
-    public static int getInt(@Nonnull Map<String, String> props, @Nonnull String key, int defaultValue) {
+    public static int getInt(@Nonnull Map<String, String> props, @Nonnull String key,
+                             int defaultValue) {
         String valueString = props.get(key);
         if (valueString != null) {
             try {
