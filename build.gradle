@@ -50,7 +50,7 @@ dependencies {
     testCompile group: 'org.hamcrest', name: 'hamcrest-all', version: hamcrestVersion
     testCompile group: 'org.mockito', name: 'mockito-core', version: mockitoVersion
 
-    codacy 'com.github.codacy:codacy-coverage-reporter:-SNAPSHOT'
+    codacy 'com.github.codacy:codacy-coverage-reporter:1.0.10'
 }
 
 task generateAvro(type: com.commercehub.gradle.plugin.avro.GenerateAvroJavaTask) {
