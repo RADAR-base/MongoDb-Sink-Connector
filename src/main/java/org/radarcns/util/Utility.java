@@ -1,5 +1,6 @@
 package org.radarcns.util;
 
+import org.apache.kafka.connect.data.Struct;
 import org.bson.BsonDouble;
 import org.bson.Document;
 import org.slf4j.Logger;
@@ -62,5 +63,10 @@ public class Utility {
             }
         }
         return defaultValue;
+    }
+
+    public static String intervalKeyToMongoKey(@Nonnull Struct key) {
+        return key.get("userID") + "-" + key.get("sourceID") + "-"
+                + key.get("start") + "-"+ key.get("end");
     }
 }

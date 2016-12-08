@@ -2,6 +2,7 @@ package org.radarcns.serialization;
 
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.sink.SinkRecord;
+import org.apache.zookeeper.server.persistence.Util;
 import org.bson.BsonDateTime;
 import org.bson.BsonDouble;
 import org.bson.Document;
@@ -23,12 +24,7 @@ public class DoubleAggregatedRecordConverter implements RecordConverter<Document
         Struct key = (Struct) record.key();
         Struct value = (Struct) record.value();
 
-        String mongoId = key.getString("userID") + "-" +
-                key.getString("sourceID") + "-" +
-                key.getInt64("start") + "-" +
-                key.getInt64("end");
-
-        return new Document("_id", mongoId)
+        return new Document("_id", Utility.intervalKeyToMongoKey(key))
                 .append("user", key.getString("userID"))
                 .append("source", key.getString("sourceID"))
                 .append("min", new BsonDouble(value.getFloat64("min")))

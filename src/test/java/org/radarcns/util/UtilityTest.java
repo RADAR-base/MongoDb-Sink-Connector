@@ -1,5 +1,8 @@
 package org.radarcns.util;
 
+import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.SchemaBuilder;
+import org.apache.kafka.connect.data.Struct;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -63,5 +66,21 @@ public class UtilityTest {
     public void getMalformedInt() throws Exception {
         Map<String, String> testMap =Collections.singletonMap("something", "some30");
         assertEquals(10, Utility.getInt(testMap, "something", 10));
+    }
+
+    @Test
+    public void intervalKeyToMongo() {
+        SchemaBuilder sb = SchemaBuilder.struct();
+        sb.field("userID", Schema.STRING_SCHEMA);
+        sb.field("sourceID", Schema.STRING_SCHEMA);
+        sb.field("start", Schema.INT64_SCHEMA);
+        sb.field("end", Schema.INT64_SCHEMA);
+        Schema schema = sb.schema();
+        Struct s = new Struct(schema);
+        s.put("userID", "myUser");
+        s.put("sourceID", "mySource");
+        s.put("start", 1000L);
+        s.put("end", 2000L);
+        assertEquals("myUser-mySource-1000-2000", Utility.intervalKeyToMongoKey(s));
     }
 }

@@ -23,12 +23,7 @@ public class AggregatedAccelerationRecordConverter implements RecordConverter<Do
         Struct key = (Struct) record.key();
         Struct value = (Struct) record.value();
 
-        String mongoId = key.getString("userID")+"-"+
-                key.getString("sourceID")+"-"+
-                key.getInt64("start")+"-"+
-                key.getInt64("end");
-
-        return new Document("_id", mongoId)
+        return new Document("_id", Utility.intervalKeyToMongoKey(key))
                 .append("user", key.getString("userID"))
                 .append("source", key.getString("sourceID"))
                 .append("min", accCompToDoc(value.getArray("min")))
