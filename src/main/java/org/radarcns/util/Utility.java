@@ -58,8 +58,8 @@ public class Utility {
             try {
                 return Integer.parseInt(valueString);
             } catch (NumberFormatException ex) {
-                log.warn("Property {} = {} cannot be parsed as an integer. " +
-                        "Using default value {}", key, valueString, defaultValue, ex);
+                log.warn("Property {} = {} cannot be parsed as an integer. "
+                        + "Using default value {}", key, valueString, defaultValue, ex);
             }
         }
         return defaultValue;
