@@ -93,8 +93,8 @@ public class MongoDbSinkTask extends SinkTask {
         for (String key : Utility.stringToSet(config.get(MongoDbSinkConnector.MUST_HAVE))) {
             if (Strings.isNullOrEmpty(config.get(key))){
                 log.error("MongoDbSinkTask cannot be created. {} is not defined", key);
-                throw new ConnectException("MongoDbSinkTask cannot be created. " + key +
-                        " is not defined");
+                throw new ConnectException("MongoDbSinkTask cannot be created. " + key
+                        + " is not defined");
             }
         }
 

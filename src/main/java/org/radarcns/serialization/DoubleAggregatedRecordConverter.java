@@ -2,7 +2,6 @@ package org.radarcns.serialization;
 
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.sink.SinkRecord;
-import org.apache.zookeeper.server.persistence.Util;
 import org.bson.BsonDateTime;
 import org.bson.BsonDouble;
 import org.bson.Document;
