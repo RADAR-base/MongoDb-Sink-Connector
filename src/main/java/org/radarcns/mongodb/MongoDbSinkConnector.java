@@ -1,37 +1,41 @@
 package org.radarcns.mongodb;
 
+import com.google.common.base.Strings;
+
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.utils.AppInfoParser;
 import org.apache.kafka.connect.connector.Task;
+import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkConnector;
 import org.radarcns.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
- * Created by Francesco Nobilia on 28/11/2016.
+ * Configures the connection between Kafka and MongoDB.
  */
 public class MongoDbSinkConnector extends SinkConnector {
-
     private static final Logger log = LoggerFactory.getLogger(MongoDbSinkConnector.class);
 
-    public static final String HOST = "host";
-    public static final String PORT = "port";
-    public static final String USR = "username";
-    public static final String PWD = "password";
-    public static final String DB = "database";
+    public static final String MONGO_HOST = "mongo.host";
+    public static final String MONGO_PORT = "mongo.port";
+    public static final String MONGO_USERNAME = "mongo.username";
+    public static final String MONGO_PASSWORD = "mongo.password";
+    public static final String MONGO_DATABASE = "mongo.database";
     public static final String COLL_DOUBLE_SINGLETON = "double.singleton";
     public static final String COLL_DOUBLE_ARRAY = "double.array";
+    public static final String BUFFER_CAPACITY = "buffer.capacity";
 
-    public static final String MUST_HAVE = "must.have";
+    public static final String[] REQUIRED_PROPERTIES = {
+        MONGO_HOST, MONGO_PORT, MONGO_USERNAME, MONGO_PASSWORD, MONGO_DATABASE, TOPICS_CONFIG,
+    };
 
-    Map<String, String> connectorConfig;
+    private Map<String, String> connectorConfig;
 
     @Override
     public String version() {
@@ -40,23 +44,17 @@ public class MongoDbSinkConnector extends SinkConnector {
 
     @Override
     public void start(Map<String, String> props) {
-        connectorConfig = new HashMap<>();
+        connectorConfig = new HashMap<>(props);
 
-        connectorConfig.put(HOST,props.get(HOST));
-        connectorConfig.put(PORT,props.get(PORT));
-
-        connectorConfig.put(USR,props.get(USR));
-        connectorConfig.put(PWD,props.get(PWD));
-        connectorConfig.put(DB,props.get(DB));
-
-        connectorConfig.put(COLL_DOUBLE_SINGLETON,props.get(COLL_DOUBLE_SINGLETON));
-        connectorConfig.put(COLL_DOUBLE_ARRAY,props.get(COLL_DOUBLE_ARRAY));
-
-        Set<String> topicList = Utility.getTopicSet(props.get(TOPICS_CONFIG));
-        topicList.stream().forEach(topic -> connectorConfig.put(topic,props.get(topic)));
-        connectorConfig.put(TOPICS_CONFIG,props.get(TOPICS_CONFIG));
-
-        connectorConfig.put(MUST_HAVE,Utility.keyListToString(connectorConfig));
+        for (String req : REQUIRED_PROPERTIES) {
+            if (Strings.isNullOrEmpty(connectorConfig.get(req))) {
+                throw new ConnectException("Required connector property '" + req + "' is not set");
+            }
+        }
+        if (Utility.parseArrayConfig(connectorConfig, TOPICS_CONFIG) == null) {
+            throw new ConnectException("Not all topics in the '" + TOPICS_CONFIG
+                    + "' property have a topic to database name mapping");
+        }
 
         log.info(Utility.convertConfigToString(connectorConfig));
     }
@@ -68,14 +66,9 @@ public class MongoDbSinkConnector extends SinkConnector {
 
     @Override
     public List<Map<String, String>> taskConfigs(int maxTasks) {
-        ArrayList<Map<String, String>> configs = new ArrayList<>();
-        for (int i = 0; i < maxTasks; i++) {
-            configs.add(connectorConfig);
-        }
+        log.info("At most {} will be started", maxTasks);
 
-        log.info("At most {} will be started",maxTasks);
-
-        return configs;
+        return Collections.nCopies(maxTasks, connectorConfig);
     }
 
     @Override
