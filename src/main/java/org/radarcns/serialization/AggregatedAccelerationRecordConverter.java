@@ -15,7 +15,8 @@ import javax.annotation.Nonnull;
 public class AggregatedAccelerationRecordConverter implements RecordConverter {
     @Override
     public Collection<String> supportedSchemaNames() {
-        return Collections.singleton(org.radarcns.aggregator.DoubleArrayAggegator.class.getName());
+        return Collections.singleton(org.radarcns.key.WindowedKey.class.getName() + "-"
+                + org.radarcns.aggregator.DoubleArrayAggegator.class.getName());
     }
 
     @Override

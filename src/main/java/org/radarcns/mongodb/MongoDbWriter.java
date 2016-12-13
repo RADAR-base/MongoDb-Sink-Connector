@@ -133,10 +133,7 @@ public class MongoDbWriter extends Thread implements Closeable {
     }
 
     private Document getDoc(SinkRecord record) throws UnsupportedDataTypeException {
-        RecordConverter converter = converterMapping.get(record.valueSchema().name());
-        if (converter == null) {
-            throw new UnsupportedDataTypeException(record.valueSchema() + " is not supported yet.");
-        }
+        RecordConverter converter = getConverter(record);
 
         try {
             return converter.convert(record);
@@ -144,6 +141,21 @@ public class MongoDbWriter extends Thread implements Closeable {
             log.error("Error while converting {}.", record, e);
             throw new UnsupportedDataTypeException("Record cannot be converted to a Document");
         }
+    }
+
+    private RecordConverter getConverter(SinkRecord record) throws UnsupportedDataTypeException {
+        RecordConverter converter = null;
+        if (record.keySchema() != null) {
+            converter = converterMapping.get(record.keySchema().name() + "-"
+                    + record.valueSchema().name());
+        }
+        if (converter == null) {
+            converter = converterMapping.get(record.valueSchema().name());
+        }
+        if (converter == null) {
+            throw new UnsupportedDataTypeException(record.valueSchema() + " is not supported yet.");
+        }
+        return converter;
     }
 
     /**

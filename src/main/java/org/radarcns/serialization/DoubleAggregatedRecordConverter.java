@@ -15,7 +15,8 @@ import javax.annotation.Nonnull;
 public class DoubleAggregatedRecordConverter implements RecordConverter {
     @Override
     public Collection<String> supportedSchemaNames() {
-        return Collections.singleton(org.radarcns.aggregator.DoubleAggegator.class.getName());
+        return Collections.singleton(org.radarcns.key.WindowedKey.class.getName() + "-"
+                + org.radarcns.aggregator.DoubleAggegator.class.getName());
     }
 
     @Override
