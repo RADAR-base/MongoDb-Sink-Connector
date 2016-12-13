@@ -5,15 +5,13 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
 import org.bson.Document;
-import org.radarcns.serialization.AggregatedAccelerationRecordConverter;
-import org.radarcns.serialization.DoubleAggregatedRecordConverter;
 import org.radarcns.serialization.RecordConverter;
 import org.radarcns.util.Monitor;
 import org.radarcns.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +21,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.radarcns.mongodb.MongoDbSinkConnector.BUFFER_CAPACITY;
+import static org.radarcns.mongodb.MongoDbSinkConnector.RECORD_CONVERTERS;
 
 /**
  * Task to handle data coming from Kafka and send it to MongoDB.
@@ -58,15 +57,30 @@ public class MongoDbSinkTask extends SinkTask {
         int bufferCapacity = Utility.getInt(props, BUFFER_CAPACITY, DEFAULT_BUFFER_CAPACITY);
         buffer = new ArrayBlockingQueue<>(bufferCapacity);
 
-        List<RecordConverter<Document>> mongoConverters = Arrays.asList(
-                new AggregatedAccelerationRecordConverter(),
-                new DoubleAggregatedRecordConverter());
+        List<RecordConverter> mongoConverters = loadRecordConverters(
+                props.get(RECORD_CONVERTERS));
 
         timer = new Timer();
         timer.schedule(new Monitor(log, count, "have been processed"), 0, 30000);
 
         writer = new MongoDbWriter(props, buffer, mongoConverters, timer);
         writer.start();
+    }
+
+    private List<RecordConverter> loadRecordConverters(String property) {
+        ClassLoader classLoader = getClass().getClassLoader();
+        String[] converterClasses = Utility.splitByComma(property);
+
+        List<RecordConverter> converters = new ArrayList<>(converterClasses.length);
+        for (String converterClass : converterClasses) {
+            try {
+                RecordConverter converter = (RecordConverter)classLoader.loadClass(converterClass).newInstance();
+                converters.add(converter);
+            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | ClassCastException e) {
+                e.printStackTrace();
+            }
+        }
+        return converters;
     }
 
     @Override

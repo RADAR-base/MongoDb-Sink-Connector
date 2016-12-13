@@ -12,12 +12,10 @@ import java.util.Collections;
 
 import javax.annotation.Nonnull;
 
-import static org.radarcns.mongodb.MongoDbSinkConnector.COLL_DOUBLE_SINGLETON;
-
-public class DoubleAggregatedRecordConverter implements RecordConverter<Document> {
+public class DoubleAggregatedRecordConverter implements RecordConverter {
     @Override
     public Collection<String> supportedSchemaNames() {
-        return Collections.singleton(COLL_DOUBLE_SINGLETON);
+        return Collections.singleton(org.radarcns.aggregator.DoubleAggegator.class.getName());
     }
 
     @Override

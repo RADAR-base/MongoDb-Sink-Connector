@@ -27,12 +27,12 @@ public class MongoDbSinkConnector extends SinkConnector {
     public static final String MONGO_USERNAME = "mongo.username";
     public static final String MONGO_PASSWORD = "mongo.password";
     public static final String MONGO_DATABASE = "mongo.database";
-    public static final String COLL_DOUBLE_SINGLETON = "double.singleton";
-    public static final String COLL_DOUBLE_ARRAY = "double.array";
     public static final String BUFFER_CAPACITY = "buffer.capacity";
+    public static final String RECORD_CONVERTERS = "record.converter.classes";
 
     public static final String[] REQUIRED_PROPERTIES = {
         MONGO_HOST, MONGO_PORT, MONGO_USERNAME, MONGO_PASSWORD, MONGO_DATABASE, TOPICS_CONFIG,
+        RECORD_CONVERTERS,
     };
 
     private Map<String, String> connectorConfig;

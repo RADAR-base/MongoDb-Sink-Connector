@@ -35,7 +35,7 @@ public class MongoDbWriter extends Thread implements Closeable {
 
     private final AtomicInteger count;
     private final MongoWrapper mongoHelper;
-    private final Map<String, RecordConverter<Document>> converterMapping;
+    private final Map<String, RecordConverter> converterMapping;
     private final BlockingQueue<SinkRecord> buffer;
 
     private final AtomicBoolean stopping;
@@ -52,7 +52,7 @@ public class MongoDbWriter extends Thread implements Closeable {
      * @throws ConnectException if cannot connect to the MongoDB database.
      */
     public MongoDbWriter(Map<String, String> props, BlockingQueue<SinkRecord> buffer,
-                         List<RecordConverter<Document>> converters, Timer timer)
+                         List<RecordConverter> converters, Timer timer)
             throws ConnectException {
         this.buffer = buffer;
         count = new AtomicInteger(0);
@@ -71,7 +71,7 @@ public class MongoDbWriter extends Thread implements Closeable {
         }
 
         converterMapping = new HashMap<>();
-        for (RecordConverter<Document> converter : converters) {
+        for (RecordConverter converter : converters) {
             for (String supportedSchema : converter.supportedSchemaNames()) {
                 converterMapping.put(supportedSchema, converter);
             }
@@ -133,7 +133,7 @@ public class MongoDbWriter extends Thread implements Closeable {
     }
 
     private Document getDoc(SinkRecord record) throws UnsupportedDataTypeException {
-        RecordConverter<Document> converter = converterMapping.get(record.valueSchema().name());
+        RecordConverter converter = converterMapping.get(record.valueSchema().name());
         if (converter == null) {
             throw new UnsupportedDataTypeException(record.valueSchema() + " is not supported yet.");
         }

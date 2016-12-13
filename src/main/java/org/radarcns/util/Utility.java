@@ -15,9 +15,6 @@ import java.util.Map;
 
 import javax.annotation.Nonnull;
 
-/**
- * Created by Francesco Nobilia on 28/11/2016.
- */
 public class Utility {
     private static final Logger log = LoggerFactory.getLogger(Utility.class);
 
@@ -37,7 +34,11 @@ public class Utility {
         if (value.isEmpty()) {
             return new String[0];
         }
-        return value.split(",");
+        String[] result = value.split(",");
+        for (int i = 0; i < result.length; i++) {
+            result[i] = result[i].trim();
+        }
+        return result;
     }
 
     public static List<Document> extractQuartile(@Nonnull List<Double> component){

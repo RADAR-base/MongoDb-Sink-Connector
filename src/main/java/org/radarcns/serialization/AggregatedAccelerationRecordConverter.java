@@ -12,12 +12,10 @@ import java.util.List;
 
 import javax.annotation.Nonnull;
 
-import static org.radarcns.mongodb.MongoDbSinkConnector.COLL_DOUBLE_ARRAY;
-
-public class AggregatedAccelerationRecordConverter implements RecordConverter<Document> {
+public class AggregatedAccelerationRecordConverter implements RecordConverter {
     @Override
     public Collection<String> supportedSchemaNames() {
-        return Collections.singleton(COLL_DOUBLE_ARRAY);
+        return Collections.singleton(org.radarcns.aggregator.DoubleArrayAggegator.class.getName());
     }
 
     @Override
@@ -39,13 +37,13 @@ public class AggregatedAccelerationRecordConverter implements RecordConverter<Do
                 .append("end", new BsonDateTime(key.getInt64("end")));
     }
 
-    private static Document accCompToDoc(List<Double> component){
+    private static Document accCompToDoc(List<Double> component) {
         return new Document("x", component.get(0))
                 .append("y", component.get(1))
                 .append("z", component.get(2));
     }
 
-    private static Document accQuartileToDoc(List<List<Double>> list){
+    private static Document accQuartileToDoc(List<List<Double>> list) {
         return new Document("x", Utility.extractQuartile(list.get(0)))
                 .append("y", Utility.extractQuartile(list.get(1)))
                 .append("z", Utility.extractQuartile(list.get(2)));

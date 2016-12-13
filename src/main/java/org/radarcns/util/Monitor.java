@@ -8,9 +8,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.annotation.Nonnull;
 
-/**
- * Created by Francesco Nobilia on 28/11/2016.
- */
 public class Monitor extends TimerTask {
     private final AtomicInteger count;
     private final Logger log;
