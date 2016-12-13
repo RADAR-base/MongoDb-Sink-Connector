@@ -4,14 +4,12 @@ import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
-import org.bson.Document;
 import org.radarcns.serialization.RecordConverter;
 import org.radarcns.util.Monitor;
 import org.radarcns.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -57,30 +55,15 @@ public class MongoDbSinkTask extends SinkTask {
         int bufferCapacity = Utility.getInt(props, BUFFER_CAPACITY, DEFAULT_BUFFER_CAPACITY);
         buffer = new ArrayBlockingQueue<>(bufferCapacity);
 
-        List<RecordConverter> mongoConverters = loadRecordConverters(
-                props.get(RECORD_CONVERTERS));
-
         timer = new Timer();
         timer.schedule(new Monitor(log, count, "have been processed"), 0, 30000);
 
-        writer = new MongoDbWriter(props, buffer, mongoConverters, timer);
+        List<RecordConverter> mongoConverters = Utility.loadRecordConverters(
+                getClass().getClassLoader(), props.get(RECORD_CONVERTERS));
+        MongoWrapper mongoHelper = new MongoWrapper(props);
+
+        writer = new MongoDbWriter(mongoHelper, buffer, mongoConverters, timer);
         writer.start();
-    }
-
-    private List<RecordConverter> loadRecordConverters(String property) {
-        ClassLoader classLoader = getClass().getClassLoader();
-        String[] converterClasses = Utility.splitByComma(property);
-
-        List<RecordConverter> converters = new ArrayList<>(converterClasses.length);
-        for (String converterClass : converterClasses) {
-            try {
-                RecordConverter converter = (RecordConverter)classLoader.loadClass(converterClass).newInstance();
-                converters.add(converter);
-            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | ClassCastException e) {
-                e.printStackTrace();
-            }
-        }
-        return converters;
     }
 
     @Override

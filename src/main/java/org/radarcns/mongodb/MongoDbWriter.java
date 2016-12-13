@@ -45,13 +45,13 @@ public class MongoDbWriter extends Thread implements Closeable {
     /**
      * Creates a writer with a MongoDB client.
      *
-     * @param props sink properties
+     * @param mongoHelper MongoDB connection
      * @param buffer buffer
      * @param converters converters from records to a MongoDB document
      * @param timer timer to run a monitoring task on
      * @throws ConnectException if cannot connect to the MongoDB database.
      */
-    public MongoDbWriter(Map<String, String> props, BlockingQueue<SinkRecord> buffer,
+    public MongoDbWriter(MongoWrapper mongoHelper, BlockingQueue<SinkRecord> buffer,
                          List<RecordConverter> converters, Timer timer)
             throws ConnectException {
         this.buffer = buffer;
@@ -63,7 +63,7 @@ public class MongoDbWriter extends Thread implements Closeable {
         latestOffsets = new HashMap<>();
         stopping = new AtomicBoolean(false);
 
-        mongoHelper = new MongoWrapper(props);
+        this.mongoHelper = mongoHelper;
 
         if (!mongoHelper.checkConnection()) {
             mongoHelper.close();

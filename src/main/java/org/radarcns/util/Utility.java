@@ -5,9 +5,11 @@ import com.google.common.base.Strings;
 import org.apache.kafka.connect.data.Struct;
 import org.bson.BsonDouble;
 import org.bson.Document;
+import org.radarcns.serialization.RecordConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -67,7 +69,8 @@ public class Utility {
                 + key.get("start") + "-"+ key.get("end");
     }
 
-    public static Map<String, String> parseArrayConfig(Map<String, String> config, String key) {
+    public static Map<String, String> parseArrayConfig(@Nonnull Map<String, String> config,
+                                                       @Nonnull String key) {
         String value = config.get(key);
         if (value == null) {
             return null;
@@ -82,5 +85,22 @@ public class Utility {
             properties.put(returnKey, returnValue);
         }
         return properties;
+    }
+
+    public static List<RecordConverter> loadRecordConverters(@Nonnull ClassLoader classLoader,
+                                                             @Nonnull String property) {
+        String[] converterClasses = Utility.splitByComma(property);
+
+        List<RecordConverter> converters = new ArrayList<>(converterClasses.length);
+        for (String converterClass : converterClasses) {
+            try {
+                Class<?> cls = classLoader.loadClass(converterClass);
+                converters.add((RecordConverter)cls.newInstance());
+            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException
+                    | ClassCastException e) {
+                log.error("Cannot instantiate RecordConverter class '{}'", converterClass, e);
+            }
+        }
+        return converters;
     }
 }

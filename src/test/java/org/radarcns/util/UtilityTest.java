@@ -111,4 +111,25 @@ public class UtilityTest {
         testMap.put("prop3", "something3");
         assertThat(Utility.parseArrayConfig(testMap, "testValues"), is(Collections.emptyMap()));
     }
+
+    @Test
+    public void testEmptyLoadClasses() {
+        assertThat(Utility.loadRecordConverters(getClass().getClassLoader(), ""), empty());
+    }
+
+    @Test
+    public void testKnownLoadClasses() {
+        String classString = "org.radarcns.serialization.DoubleAggregatedRecordConverter,"
+                + "org.radarcns.serialization.AggregatedAccelerationRecordConverter";
+        ClassLoader loader = getClass().getClassLoader();
+        assertThat(Utility.loadRecordConverters(loader, classString), hasSize(2));
+    }
+
+    @Test
+    public void testUnknownLoadClasses() {
+        String classString = "org.radarcns.serialization.DoubleAggregatedRecordConverter,"
+                + "org.radarcns.serialization.UNKNOWN";
+        ClassLoader loader = getClass().getClassLoader();
+        assertThat(Utility.loadRecordConverters(loader, classString), hasSize(1));
+    }
 }
