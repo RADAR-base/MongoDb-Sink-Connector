@@ -9,31 +9,28 @@ Currently it supports only two types of data:
 The current version proofs how to extract data coming from an Empatica E4 device using the [RADAR-CNS Android application](https://github.com/RADAR-CNS/RADAR-AndroidApplication) and analysed by the [RADAR-CNS Kafka Backend](https://github.com/RADAR-CNS/RADAR-Backend) 
 
 ## Dependence
+
 The following assumes you have Kafka and the Confluent Schema Registry running.
 
 ## Quickstart for Empatica
 
 1. Build the project. Go inside the project folder and run
 ```shell
-# Clean
-$ gradle clean
-
-# Build
-$ gradle build
+./gradlew clean build
 ```
 2. Modify `sink.properties` file according your cluster
-```shell
+```ini
 # MongoDb server
-host=
-port=
+mongo.host=
+mongo.port=
 
 # MongoDb db configuration
-username=
-password=
-database=
+mongo.username=
+mongo.password=
+mongo.database=
 ```
 3. (optional) Modify `standalone.properties` and `standalone.properties` file according your cluster instances. You may need to update the bootstraps and Schema Registry locations.
-```shell
+```ini
 bootstrap.servers=
 key.converter.schema.registry.url=
 ```
@@ -44,15 +41,17 @@ key.converter.schema.registry.url=
   - cluster.properties (optional)
 6. Run your connector
 ```shell
-$ export CLASSPATH=export CLASSPATH=mongoconnector-1.0.jar
+export CLASSPATH=mongoconnector-1.0.jar
 ```
   - standalone mode
+
   ```shell
-  $ /bin/connect-standalone standalone.properties sink.properties
+  /bin/connect-standalone standalone.properties sink.properties
   ```
   - distributed mode
+
   ```shell
-    $ /bin/connect-distributed cluster.properties sink.properties
+  /bin/connect-distributed cluster.properties sink.properties
   ```
 7. stop your connector using `CTRL-C`
  
