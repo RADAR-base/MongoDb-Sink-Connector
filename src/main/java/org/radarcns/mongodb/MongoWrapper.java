@@ -17,6 +17,7 @@
 package org.radarcns.mongodb;
 
 import com.mongodb.MongoClient;
+import com.mongodb.MongoClientOptions;
 import com.mongodb.MongoCredential;
 import com.mongodb.MongoException;
 import com.mongodb.ServerAddress;
@@ -58,11 +59,11 @@ public class MongoWrapper implements Closeable {
      * @param config Configuration of the client, according to {@link MongoDbSinkConnector}.
      * @throws ConnectException a MongoClient could not be created.
      */
-    public MongoWrapper(AbstractConfig config) {
+    public MongoWrapper(AbstractConfig config, MongoClientOptions options) {
         collectionFormat = config.getString(COLLECTION_FORMAT);
         dbName = config.getString(MONGO_DATABASE);
         credentials = createCredentials(config);
-        mongoClient = createClient(config);
+        mongoClient = createClient(config, options);
     }
 
     private List<MongoCredential> createCredentials(AbstractConfig config) {
@@ -76,15 +77,18 @@ public class MongoWrapper implements Closeable {
         }
     }
 
-    private MongoClient createClient(AbstractConfig config) {
+    private MongoClient createClient(AbstractConfig config, MongoClientOptions options) {
         String host = config.getString(MONGO_HOST);
         int port = config.getInt(MONGO_PORT);
 
         try {
-            return new MongoClient(new ServerAddress(host, port), credentials);
+            if (options == null) {
+                options = new MongoClientOptions.Builder().build();
+            }
+            return new MongoClient(new ServerAddress(host, port), credentials, options);
         } catch (com.mongodb.MongoSocketOpenException e){
-            log.error("Failed to create MongoDB client to {}:{} with credential {}", host, port,
-                    credentials.get(0), e);
+            log.error("Failed to create MongoDB client to {}:{} with credentials {}", host, port,
+                    credentials, e);
             throw new ConnectException("MongoDb client cannot be created.", e);
         }
     }
@@ -92,9 +96,7 @@ public class MongoWrapper implements Closeable {
     /** Whether the database can be pinged using the current MongoDB client and credentials */
     public boolean checkConnection() {
         try {
-            for (MongoCredential user : credentials) {
-                mongoClient.getDatabase(user.getSource()).runCommand(new Document("ping", 1));
-            }
+            mongoClient.getDatabase(dbName).runCommand(new Document("ping", 1));
             return true;
         } catch (Exception e) {
             log.error("Error during MongoDB connection test", e);

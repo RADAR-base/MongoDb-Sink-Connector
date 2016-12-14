@@ -78,7 +78,7 @@ public class MongoDbSinkTask extends SinkTask {
         } catch (InstantiationException | IllegalAccessException | ClassCastException e) {
             throw new IllegalWorkerStateException("Got illegal RecordConverterClass", e);
         }
-        MongoWrapper mongoHelper = new MongoWrapper(config);
+        MongoWrapper mongoHelper = new MongoWrapper(config, null);
 
         writer = new MongoDbWriter(mongoHelper, buffer, converterFactory, timer);
         writer.start();
