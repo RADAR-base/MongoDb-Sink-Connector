@@ -29,7 +29,7 @@ public class ValidClassTest {
         assertNotNull(validator);
     }
 
-    @Test(expected=NullPointerException.class)
+    @Test(expected=IllegalArgumentException.class)
     public void isSubclassOfNull() throws Exception {
         ValidClass.isSubclassOf(null);
     }

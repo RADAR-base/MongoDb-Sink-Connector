@@ -101,7 +101,8 @@ public class MongoDbSinkConnector extends SinkConnector {
     public ConfigDef config() {
         ConfigDef conf = new ConfigDef();
         conf.define(MONGO_HOST, ConfigDef.Type.STRING, NO_DEFAULT_VALUE, HIGH,
-                "MongoDB host name to write data to", "MongoDB", 0, ConfigDef.Width.MEDIUM, "MongoDB hostname");
+                "MongoDB host name to write data to", "MongoDB", 0, ConfigDef.Width.MEDIUM,
+                "MongoDB hostname");
         conf.define(MONGO_PORT, ConfigDef.Type.INT, 27017, ConfigDef.Range.atLeast(1), LOW,
                 "MongoDB port", "MongoDB", 1, ConfigDef.Width.SHORT, "MongoDB port");
         conf.define(MONGO_DATABASE, ConfigDef.Type.STRING, NO_DEFAULT_VALUE, HIGH,
@@ -113,17 +114,18 @@ public class MongoDbSinkConnector extends SinkConnector {
         conf.define(MONGO_PASSWORD, ConfigDef.Type.STRING, null, MEDIUM,
                 "Password to connect to MongoDB database. If not set, no credentials are used.",
                 "MongoDB", 4, ConfigDef.Width.SHORT, "MongoDB password",
-                Collections.singletonList(MONGO_USERNAME));
+        conf.define(COLLECTION_FORMAT, ConfigDef.Type.STRING, "{$topic}", MEDIUM,
+                "A format string for the destination collection name, which may contain `${topic}`"
+                + "as a placeholder for the originating topic name.\n"
+                + "For example, `kafka_${topic}` for the topic `orders` will map to the "
+                + "collection name `kafka_orders`.", "MongoDB", 5, ConfigDef.Width.LONG,
+                "MongoDB collection name format");
+        Collections.singletonList(MONGO_USERNAME));
         conf.define(TOPICS_CONFIG, ConfigDef.Type.LIST, NO_DEFAULT_VALUE, HIGH,
                 "List of topics to be streamed.");
         conf.define(BUFFER_CAPACITY, ConfigDef.Type.INT, 20_000, ConfigDef.Range.atLeast(1), LOW,
                 "Maximum number of items in a MongoDB writer buffer. Once the buffer becomes full,"
                 + "the task fails.");
-        conf.define(COLLECTION_FORMAT, ConfigDef.Type.STRING, "{$topic}", MEDIUM,
-                "A format string for the destination collection name, which may contain `${topic}`"
-                + "as a placeholder for the originating topic name.\n"
-                + "For example, `kafka_${topic}` for the topic `orders` will map to the "
-                + "collection name `kafka_orders`.");
         conf.define(RECORD_CONVERTER, ConfigDef.Type.CLASS, RecordConverterFactory.class,
                 ValidClass.isSubclassOf(RecordConverterFactory.class), MEDIUM,
                 "RecordConverterFactory that returns classes to convert Kafka SinkRecords to BSON "

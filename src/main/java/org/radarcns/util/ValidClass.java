@@ -32,7 +32,7 @@ public class ValidClass implements ConfigDef.Validator {
     /** Ensures that classes are subclass of the given class and that they are instantiable. */
     public static ValidClass isSubclassOf(Class<?> cls) {
         if (cls == null) {
-            throw new NullPointerException("Class name may not be null");
+            throw new IllegalArgumentException("Class name may not be null");
         }
         return new ValidClass(cls);
     }
