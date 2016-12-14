@@ -17,7 +17,6 @@
 package org.radarcns.mongodb;
 
 import org.apache.kafka.common.config.ConfigException;
-import org.apache.kafka.connect.errors.ConnectException;
 import org.junit.Test;
 
 import java.util.Collection;
