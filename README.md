@@ -65,11 +65,7 @@ key.converter.schema.registry.url=
   - sink.properties 
   - standalone.properties (optional)
   - cluster.properties (optional)
-- Run your connector
-
-```shell
-export CLASSPATH=kafka-connectors-mongodb-sink-0.1-SNAPSHOT.jar
-```
+- Put the connector `build/libs/kafka-connect-mongodb-sink-*.jar` in the folder `share/java`.
   - standalone mode
 
   ```shell
