@@ -66,12 +66,11 @@ public class MongoWrapper implements Closeable {
     }
 
     private List<MongoCredential> createCredentials(AbstractConfig config) {
-        if (config.values().containsKey(MONGO_USERNAME)) {
-            String userName = config.getString(MONGO_USERNAME);
-            char[] password = config.getString(MONGO_PASSWORD).toCharArray();
-
+        String userName = config.getString(MONGO_USERNAME);
+        String password = config.getString(MONGO_PASSWORD);
+        if (userName != null && password != null) {
             return Collections.singletonList(
-                    MongoCredential.createCredential(userName, dbName, password));
+                    MongoCredential.createCredential(userName, dbName, password.toCharArray()));
         } else {
             return Collections.emptyList();
         }

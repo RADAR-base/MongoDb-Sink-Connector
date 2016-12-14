@@ -17,12 +17,14 @@
 package org.radarcns.mongodb;
 
 import org.apache.kafka.common.config.ConfigDef;
+import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.config.ConfigValue;
 import org.apache.kafka.common.utils.AppInfoParser;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkConnector;
 import org.radarcns.serialization.RecordConverterFactory;
+import org.radarcns.util.NotEmptyString;
 import org.radarcns.util.Utility;
 import org.radarcns.util.ValidClass;
 import org.slf4j.Logger;
@@ -33,6 +35,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.apache.kafka.common.config.ConfigDef.Importance.HIGH;
 import static org.apache.kafka.common.config.ConfigDef.Importance.LOW;
@@ -47,10 +50,12 @@ public class MongoDbSinkConnector extends SinkConnector {
 
     public static final String MONGO_HOST = "mongo.host";
     public static final String MONGO_PORT = "mongo.port";
+    public static final int MONGO_PORT_DEFAULT = 27017;
     public static final String MONGO_USERNAME = "mongo.username";
     public static final String MONGO_PASSWORD = "mongo.password";
     public static final String MONGO_DATABASE = "mongo.database";
     public static final String BUFFER_CAPACITY = "buffer.capacity";
+    public static final int BUFFER_CAPACITY_DEFAULT = 20_000;
     public static final String COLLECTION_FORMAT = "mongo.collection.format";
     public static final String RECORD_CONVERTER = "record.converter.class";
 
@@ -71,7 +76,7 @@ public class MongoDbSinkConnector extends SinkConnector {
             }
         }
         if (!errorMessages.isEmpty()) {
-            throw new ConnectException("Configuration does not validate: \n\t"
+            throw new ConfigException("Configuration does not validate: \n\t"
                     + String.join("\n\t", errorMessages));
         }
 
@@ -100,13 +105,14 @@ public class MongoDbSinkConnector extends SinkConnector {
     @Override
     public ConfigDef config() {
         ConfigDef conf = new ConfigDef();
-        conf.define(MONGO_HOST, ConfigDef.Type.STRING, NO_DEFAULT_VALUE, HIGH,
+        conf.define(MONGO_HOST, ConfigDef.Type.STRING, NO_DEFAULT_VALUE, new NotEmptyString(), HIGH,
                 "MongoDB host name to write data to", "MongoDB", 0, ConfigDef.Width.MEDIUM,
                 "MongoDB hostname");
-        conf.define(MONGO_PORT, ConfigDef.Type.INT, 27017, ConfigDef.Range.atLeast(1), LOW,
-                "MongoDB port", "MongoDB", 1, ConfigDef.Width.SHORT, "MongoDB port");
-        conf.define(MONGO_DATABASE, ConfigDef.Type.STRING, NO_DEFAULT_VALUE, HIGH,
-                "MongoDB database name", "MongoDB", 2, ConfigDef.Width.SHORT, "MongoDB database");
+        conf.define(MONGO_PORT, ConfigDef.Type.INT, MONGO_PORT_DEFAULT, ConfigDef.Range.atLeast(1),
+                LOW, "MongoDB port", "MongoDB", 1, ConfigDef.Width.SHORT, "MongoDB port");
+        conf.define(MONGO_DATABASE, ConfigDef.Type.STRING, NO_DEFAULT_VALUE, new NotEmptyString(),
+                HIGH, "MongoDB database name", "MongoDB", 2, ConfigDef.Width.SHORT,
+                "MongoDB database");
         conf.define(MONGO_USERNAME, ConfigDef.Type.STRING, null, MEDIUM,
                 "Username to connect to MongoDB database. If not set, no credentials are used.",
                 "MongoDB", 3, ConfigDef.Width.SHORT, "MongoDB username",
@@ -115,7 +121,8 @@ public class MongoDbSinkConnector extends SinkConnector {
                 "Password to connect to MongoDB database. If not set, no credentials are used.",
                 "MongoDB", 4, ConfigDef.Width.SHORT, "MongoDB password",
                 Collections.singletonList(MONGO_USERNAME));
-        conf.define(COLLECTION_FORMAT, ConfigDef.Type.STRING, "{$topic}", MEDIUM,
+        conf.define(COLLECTION_FORMAT, ConfigDef.Type.STRING, "{$topic}", new NotEmptyString(),
+                MEDIUM,
                 "A format string for the destination collection name, which may contain `${topic}`"
                 + "as a placeholder for the originating topic name.\n"
                 + "For example, `kafka_${topic}` for the topic `orders` will map to the "
@@ -123,7 +130,8 @@ public class MongoDbSinkConnector extends SinkConnector {
                 "MongoDB collection name format");
         conf.define(TOPICS_CONFIG, ConfigDef.Type.LIST, NO_DEFAULT_VALUE, HIGH,
                 "List of topics to be streamed.");
-        conf.define(BUFFER_CAPACITY, ConfigDef.Type.INT, 20_000, ConfigDef.Range.atLeast(1), LOW,
+        conf.define(BUFFER_CAPACITY, ConfigDef.Type.INT, BUFFER_CAPACITY_DEFAULT,
+                ConfigDef.Range.atLeast(1), LOW,
                 "Maximum number of items in a MongoDB writer buffer. Once the buffer becomes full,"
                 + "the task fails.");
         conf.define(RECORD_CONVERTER, ConfigDef.Type.CLASS, RecordConverterFactory.class,
