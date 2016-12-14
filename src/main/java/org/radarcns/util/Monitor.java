@@ -22,8 +22,6 @@ import java.util.Collection;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.annotation.Nonnull;
-
 public class Monitor extends TimerTask {
     private final AtomicInteger count;
     private final Logger log;
@@ -31,12 +29,15 @@ public class Monitor extends TimerTask {
 
     private final Collection<?> buffer;
 
-    public Monitor(@Nonnull Logger log, @Nonnull AtomicInteger count, String message) {
+    public Monitor(Logger log, AtomicInteger count, String message) {
         this(log, count, message, null);
     }
 
-    public Monitor(@Nonnull Logger log, @Nonnull AtomicInteger count, String message,
+    public Monitor(Logger log, AtomicInteger count, String message,
                    Collection<?> buffer) {
+        if (log == null || count == null) {
+            throw new NullPointerException("Parameters log and count may not be null");
+        }
         this.count = count;
         this.log = log;
         this.message = message;

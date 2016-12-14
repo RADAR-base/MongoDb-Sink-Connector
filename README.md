@@ -21,17 +21,35 @@ The following assumes you have Kafka and the Confluent Schema Registry running.
 ```shell
 ./gradlew clean build
 ```
-2. Modify `sink.properties` file according your cluster
-```ini
-# MongoDb server
-mongo.host=
-mongo.port=
+2. Modify `sink.properties` file according your cluster. The following properties are supported:
 
-# MongoDb db configuration
-mongo.username=
-mongo.password=
-mongo.database=
-```
+<table class="data-table"><tbody>
+<tr>
+<th>Name</th>
+<th>Description</th>
+<th>Type</th>
+<th>Default</th>
+<th>Valid Values</th>
+<th>Importance</th>
+</tr>
+<tr>
+<td>mongo.database</td><td>MongoDB database name</td><td>string</td><td></td><td></td><td>high</td></tr>
+<tr>
+<td>mongo.host</td><td>MongoDB host name to write data to</td><td>string</td><td></td><td></td><td>high</td></tr>
+<tr>
+<td>record.converter.classes</td><td>List of classes to convert Kafka SinkRecords to BSON documents.</td><td>list</td><td></td><td></td><td>high</td></tr>
+<tr>
+<td>topics</td><td>List of topics. For each topic, optionally make a property with as key the topic and as value the MongoDB collection the data from that topic should be stored in.</td><td>list</td><td></td><td></td><td>high</td></tr>
+<tr>
+<td>mongo.password</td><td>Password to connect to MongoDB database. If not set, no credentials are used.</td><td>string</td><td>null</td><td></td><td>medium</td></tr>
+<tr>
+<td>mongo.username</td><td>Username to connect to MongoDB database. If not set, no credentials are used.</td><td>string</td><td>null</td><td></td><td>medium</td></tr>
+<tr>
+<td>buffer.capacity</td><td>Maximum number of items in a MongoDB writer buffer. Once the buffer becomes full,the task fails.</td><td>int</td><td>20000</td><td>[1,...]</td><td>low</td></tr>
+<tr>
+<td>mongo.port</td><td>MongoDB port</td><td>int</td><td>27017</td><td>[1,...]</td><td>low</td></tr>
+</tbody></table>
+
 3. (optional) Modify `standalone.properties` and `standalone.properties` file according your cluster instances. You may need to update the bootstraps and Schema Registry locations.
 ```ini
 bootstrap.servers=

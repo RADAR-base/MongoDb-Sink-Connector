@@ -18,6 +18,7 @@ package org.radarcns.mongodb;
 
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
 import org.radarcns.serialization.RecordConverter;
@@ -46,9 +47,6 @@ import static org.radarcns.mongodb.MongoDbSinkConnector.RECORD_CONVERTERS;
  * operation will then at some point timeout.
  */
 public class MongoDbSinkTask extends SinkTask {
-    // Assuming record sizes of 1 kB, we default to a 20 MB buffer
-    private static final int DEFAULT_BUFFER_CAPACITY = 20_000;
-
     private static final Logger log = LoggerFactory.getLogger(MongoDbSinkTask.class);
 
     private final AtomicInteger count;
@@ -68,15 +66,16 @@ public class MongoDbSinkTask extends SinkTask {
 
     @Override
     public void start(Map<String, String> props) {
-        int bufferCapacity = Utility.getInt(props, BUFFER_CAPACITY, DEFAULT_BUFFER_CAPACITY);
-        buffer = new ArrayBlockingQueue<>(bufferCapacity);
-
         timer = new Timer();
-        timer.schedule(new Monitor(log, count, "have been processed"), 0, 30000);
+        timer.schedule(new Monitor(log, count, "have been processed"), 0, 30_000);
+
+        AbstractConfig config = new AbstractConfig(new MongoDbSinkConnector().config().parse(props));
+
+        buffer = new ArrayBlockingQueue<>(config.getInt(BUFFER_CAPACITY));
 
         List<RecordConverter> mongoConverters = Utility.loadRecordConverters(
-                getClass().getClassLoader(), props.get(RECORD_CONVERTERS));
-        MongoWrapper mongoHelper = new MongoWrapper(props);
+                getClass().getClassLoader(), config.getList(RECORD_CONVERTERS));
+        MongoWrapper mongoHelper = new MongoWrapper(config);
 
         writer = new MongoDbWriter(mongoHelper, buffer, mongoConverters, timer);
         writer.start();

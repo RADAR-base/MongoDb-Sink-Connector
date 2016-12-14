@@ -29,13 +29,12 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import javax.annotation.Nonnull;
+import java.util.Set;
 
 public class Utility {
     private static final Logger log = LoggerFactory.getLogger(Utility.class);
 
-    public static String convertConfigToString(@Nonnull Map<String, String> map){
+    public static String convertConfigToString(Map<String, String> map){
         String ret = "User configuration are: ";
         for (Map.Entry<String, String> entry : map.entrySet()) {
             ret += "\n\t" + entry.getKey() + ": " + entry.getValue();
@@ -43,70 +42,42 @@ public class Utility {
         return ret;
     }
 
-    public static String keyListToString(@Nonnull Map<String, String> map){
+    public static String keyListToString(Map<String, String> map){
         return String.join(",", map.keySet());
     }
 
-    public static String[] splitByComma(@Nonnull String value){
-        if (value.isEmpty()) {
-            return new String[0];
-        }
-        String[] result = value.split(",");
-        for (int i = 0; i < result.length; i++) {
-            result[i] = result[i].trim();
-        }
-        return result;
-    }
-
-    public static List<Document> extractQuartile(@Nonnull List<Double> component){
+    public static List<Document> extractQuartile(List<Double> component){
         return Arrays.asList(
                 new Document("25", new BsonDouble(component.get(0))),
                 new Document("50", new BsonDouble(component.get(1))),
                 new Document("75", new BsonDouble(component.get(2))));
     }
 
-    public static int getInt(@Nonnull Map<String, String> props, @Nonnull String key,
-                             int defaultValue) {
-        String valueString = props.get(key);
-        if (valueString != null) {
-            try {
-                return Integer.parseInt(valueString);
-            } catch (NumberFormatException ex) {
-                log.warn("Property {} = {} cannot be parsed as an integer. "
-                        + "Using default value {}", key, valueString, defaultValue, ex);
-            }
-        }
-        return defaultValue;
-    }
-
-    public static String intervalKeyToMongoKey(@Nonnull Struct key) {
+    public static String intervalKeyToMongoKey(Struct key) {
         return key.get("userID") + "-" + key.get("sourceID") + "-"
                 + key.get("start") + "-"+ key.get("end");
     }
 
-    public static Map<String, String> parseArrayConfig(@Nonnull Map<String, String> config,
-                                                       @Nonnull String key) {
-        String value = config.get(key);
-        if (value == null) {
-            return null;
-        }
-
+    public static Map<String, String> parseArrayConfig(AbstractConfig config, String key) {
+        List<String> value = config.getList(key);
+        Set<String> originalKeys = config.values().keySet();
         Map<String, String> properties = new HashMap<>();
-        for (String returnKey : splitByComma(value)) {
-            String returnValue = config.get(returnKey);
-            if (Strings.isNullOrEmpty(returnValue)) {
-                return null;
+        for (String returnKey : value) {
+            String returnValue = null;
+            if (originalKeys.contains(returnKey)) {
+                String tmpValue = config.getString(returnKey);
+                if (!tmpValue.isEmpty()) {
+                    returnValue = tmpValue;
+                }
             }
             properties.put(returnKey, returnValue);
         }
         return properties;
     }
 
-    public static List<RecordConverter> loadRecordConverters(@Nonnull ClassLoader classLoader,
-                                                             @Nonnull String property) {
-        String[] converterClasses = Utility.splitByComma(property);
-
-        List<RecordConverter> converters = new ArrayList<>(converterClasses.length);
+    public static List<RecordConverter> loadRecordConverters(ClassLoader classLoader,
+                                                             List<String> converterClasses) {
+        List<RecordConverter> converters = new ArrayList<>(converterClasses.size());
         for (String converterClass : converterClasses) {
             try {
                 Class<?> cls = classLoader.loadClass(converterClass);

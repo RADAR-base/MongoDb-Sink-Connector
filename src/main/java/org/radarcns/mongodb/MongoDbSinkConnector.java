@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-import com.google.common.base.Strings;
+package org.radarcns.mongodb;
 
 import org.apache.kafka.common.config.ConfigDef;
+import org.apache.kafka.common.config.ConfigValue;
 import org.apache.kafka.common.utils.AppInfoParser;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.errors.ConnectException;
@@ -25,10 +26,16 @@ import org.radarcns.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.apache.kafka.common.config.ConfigDef.Importance.HIGH;
+import static org.apache.kafka.common.config.ConfigDef.Importance.LOW;
+import static org.apache.kafka.common.config.ConfigDef.Importance.MEDIUM;
+import static org.apache.kafka.common.config.ConfigDef.NO_DEFAULT_VALUE;
 
 /**
  * Configures the connection between Kafka and MongoDB.
@@ -44,11 +51,6 @@ public class MongoDbSinkConnector extends SinkConnector {
     public static final String BUFFER_CAPACITY = "buffer.capacity";
     public static final String RECORD_CONVERTERS = "record.converter.classes";
 
-    public static final String[] REQUIRED_PROPERTIES = {
-        MONGO_HOST, MONGO_PORT, MONGO_USERNAME, MONGO_PASSWORD, MONGO_DATABASE, TOPICS_CONFIG,
-        RECORD_CONVERTERS,
-    };
-
     private Map<String, String> connectorConfig;
 
     @Override
@@ -58,18 +60,19 @@ public class MongoDbSinkConnector extends SinkConnector {
 
     @Override
     public void start(Map<String, String> props) {
-        connectorConfig = new HashMap<>(props);
-
-        for (String req : REQUIRED_PROPERTIES) {
-            if (Strings.isNullOrEmpty(connectorConfig.get(req))) {
-                throw new ConnectException("Required connector property '" + req + "' is not set");
+        List<String> errorMessages = new ArrayList<>();
+        for (ConfigValue v : config().validate(props)) {
+            if (!v.errorMessages().isEmpty()) {
+                errorMessages.add("Property " + v.name() + " with value " + v.value()
+                        + " does not validate: " + String.join("; ", v.errorMessages()));
             }
         }
-        if (Utility.parseArrayConfig(connectorConfig, TOPICS_CONFIG) == null) {
-            throw new ConnectException("Not all topics in the '" + TOPICS_CONFIG
-                    + "' property have a topic to database name mapping");
+        if (!errorMessages.isEmpty()) {
+            throw new ConnectException("Configuration does not validate: \n\t"
+                    + String.join("\n\t", errorMessages));
         }
 
+        connectorConfig = new HashMap<>(props);
         log.info(Utility.convertConfigToString(connectorConfig));
     }
 
@@ -93,6 +96,34 @@ public class MongoDbSinkConnector extends SinkConnector {
 
     @Override
     public ConfigDef config() {
-        return null;
+        ConfigDef conf = new ConfigDef();
+        conf.define(MONGO_HOST, ConfigDef.Type.STRING, NO_DEFAULT_VALUE, HIGH,
+                "MongoDB host name to write data to", "MongoDB", 0, ConfigDef.Width.MEDIUM, "MongoDB hostname");
+        conf.define(MONGO_PORT, ConfigDef.Type.INT, 27017, ConfigDef.Range.atLeast(1), LOW,
+                "MongoDB port", "MongoDB", 1, ConfigDef.Width.SHORT, "MongoDB port");
+        conf.define(MONGO_DATABASE, ConfigDef.Type.STRING, NO_DEFAULT_VALUE, HIGH,
+                "MongoDB database name", "MongoDB", 2, ConfigDef.Width.SHORT, "MongoDB database");
+        conf.define(MONGO_USERNAME, ConfigDef.Type.STRING, null, MEDIUM,
+                "Username to connect to MongoDB database. If not set, no credentials are used.",
+                "MongoDB", 3, ConfigDef.Width.SHORT, "MongoDB username",
+                Collections.singletonList(MONGO_PASSWORD));
+        conf.define(MONGO_PASSWORD, ConfigDef.Type.STRING, null, MEDIUM,
+                "Password to connect to MongoDB database. If not set, no credentials are used.",
+                "MongoDB", 4, ConfigDef.Width.SHORT, "MongoDB password",
+                Collections.singletonList(MONGO_USERNAME));
+        conf.define(TOPICS_CONFIG, ConfigDef.Type.LIST, NO_DEFAULT_VALUE, HIGH,
+                "List of topics. For each topic, optionally make a property with as key the topic "
+                        + "and as value the MongoDB collection the data from that topic should be "
+                        + "stored in.");
+        conf.define(BUFFER_CAPACITY, ConfigDef.Type.INT, 20_000, ConfigDef.Range.atLeast(1), LOW,
+                "Maximum number of items in a MongoDB writer buffer. Once the buffer becomes full,"
+                        + "the task fails.");
+        conf.define(RECORD_CONVERTERS, ConfigDef.Type.LIST, NO_DEFAULT_VALUE, HIGH,
+                "List of classes to convert Kafka SinkRecords to BSON documents.");
+        return conf;
+    }
+
+    public static void main(String... args) {
+        System.out.println(new MongoDbSinkConnector().config().toHtmlTable());
     }
 }

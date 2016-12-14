@@ -26,17 +26,15 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import javax.annotation.Nonnull;
-
 public class AggregatedAccelerationRecordConverter implements RecordConverter {
     @Override
     public Collection<String> supportedSchemaNames() {
-        return Collections.singleton(org.radarcns.key.WindowedKey.class.getName() + "-"
-                + org.radarcns.aggregator.DoubleArrayAggegator.class.getName());
+        return Collections.singleton("org.radarcns.key.WindowedKey-"
+                + "org.radarcns.aggregator.DoubleArrayAggegator");
     }
 
     @Override
-    public Document convert(@Nonnull SinkRecord record) {
+    public Document convert(SinkRecord record) {
         Struct key = (Struct) record.key();
         Struct value = (Struct) record.value();
 

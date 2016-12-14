@@ -24,6 +24,7 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.UpdateOptions;
 
+import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.bson.Document;
 import org.radarcns.util.Utility;
@@ -37,6 +38,11 @@ import java.util.Map;
 
 import static com.mongodb.client.model.Filters.eq;
 import static org.apache.kafka.connect.sink.SinkTask.TOPICS_CONFIG;
+import static org.radarcns.mongodb.MongoDbSinkConnector.MONGO_DATABASE;
+import static org.radarcns.mongodb.MongoDbSinkConnector.MONGO_HOST;
+import static org.radarcns.mongodb.MongoDbSinkConnector.MONGO_PASSWORD;
+import static org.radarcns.mongodb.MongoDbSinkConnector.MONGO_PORT;
+import static org.radarcns.mongodb.MongoDbSinkConnector.MONGO_USERNAME;
 
 /**
  * Wrapper around {@link MongoClient}.
@@ -54,24 +60,28 @@ public class MongoWrapper implements Closeable {
      * @param config Configuration of the client, according to {@link MongoDbSinkConnector}.
      * @throws ConnectException a MongoClient could not be created.
      */
-    public MongoWrapper(Map<String, String> config) {
+    public MongoWrapper(AbstractConfig config) {
         mapping = Utility.parseArrayConfig(config, TOPICS_CONFIG);
-        dbName = config.get(MongoDbSinkConnector.MONGO_DATABASE);
+        dbName = config.getString(MONGO_DATABASE);
         credentials = createCredentials(config);
         mongoClient = createClient(config);
     }
 
-    private List<MongoCredential> createCredentials(Map<String, String> config) {
-        String userName = config.get(MongoDbSinkConnector.MONGO_USERNAME);
-        char[] password = config.get(MongoDbSinkConnector.MONGO_PASSWORD).toCharArray();
+    private List<MongoCredential> createCredentials(AbstractConfig config) {
+        if (config.values().containsKey(MONGO_USERNAME)) {
+            String userName = config.getString(MONGO_USERNAME);
+            char[] password = config.getString(MONGO_PASSWORD).toCharArray();
 
-        return Collections.singletonList(
-                MongoCredential.createCredential(userName, dbName, password));
+            return Collections.singletonList(
+                    MongoCredential.createCredential(userName, dbName, password));
+        } else {
+            return Collections.emptyList();
+        }
     }
 
-    private MongoClient createClient(Map<String, String> config) {
-        String host = config.get(MongoDbSinkConnector.MONGO_HOST);
-        int port = Integer.parseInt(config.get(MongoDbSinkConnector.MONGO_PORT));
+    private MongoClient createClient(AbstractConfig config) {
+        String host = config.getString(MONGO_HOST);
+        int port = config.getInt(MONGO_PORT);
 
         try {
             return new MongoClient(new ServerAddress(host, port), credentials);
@@ -109,7 +119,11 @@ public class MongoWrapper implements Closeable {
      */
     public void store(String topic, Document doc) throws MongoException {
         MongoDatabase database = mongoClient.getDatabase(dbName);
-        MongoCollection<Document> collection = database.getCollection(mapping.get(topic));
+        String collectionName = mapping.get(topic);
+        if (collectionName == null) {
+            collectionName = topic;
+        }
+        MongoCollection<Document> collection = database.getCollection(collectionName);
 
         collection.replaceOne(eq("_id", doc.get("_id")), doc, (new UpdateOptions()).upsert(true));
     }
