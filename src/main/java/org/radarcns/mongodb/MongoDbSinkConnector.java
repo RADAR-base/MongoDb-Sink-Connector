@@ -51,7 +51,7 @@ public class MongoDbSinkConnector extends SinkConnector {
     public static final String MONGO_PASSWORD = "mongo.password";
     public static final String MONGO_DATABASE = "mongo.database";
     public static final String BUFFER_CAPACITY = "buffer.capacity";
-    public static final String COLLECTION_FORMAT = "collection.format";
+    public static final String COLLECTION_FORMAT = "mongo.collection.format";
     public static final String RECORD_CONVERTER = "record.converter.class";
 
     private Map<String, String> connectorConfig;
