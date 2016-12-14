@@ -19,6 +19,7 @@ package org.radarcns.mongodb;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.errors.ConnectException;
+import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.bson.Document;
 import org.radarcns.serialization.RecordConverter;
@@ -36,8 +37,6 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import javax.activation.UnsupportedDataTypeException;
 
 /**
  * A thread that reads Kafka SinkRecords from a buffer and writes them to a MongoDB database.
@@ -115,7 +114,7 @@ public class MongoDbWriter extends Thread implements Closeable {
             Document doc = getDoc(record);
             mongoHelper.store(record.topic(), doc);
             monitor.increment();
-        } catch (UnsupportedDataTypeException e) {
+        } catch (DataException e) {
             log.error("Unsupported MongoDB data type in data from Kafka. Skipping record {}",
                     record, e);
             setException(e);
@@ -141,14 +140,14 @@ public class MongoDbWriter extends Thread implements Closeable {
         this.exception = ex;
     }
 
-    private Document getDoc(SinkRecord record) throws UnsupportedDataTypeException {
+    private Document getDoc(SinkRecord record) throws DataException {
         RecordConverter converter = converterFactory.getRecordConverter(record);
 
         try {
             return converter.convert(record);
         } catch (Exception e) {
             log.error("Error while converting {}.", record, e);
-            throw new UnsupportedDataTypeException("Record cannot be converted to a Document");
+            throw new DataException("Record cannot be converted to a Document", e);
         }
     }
 

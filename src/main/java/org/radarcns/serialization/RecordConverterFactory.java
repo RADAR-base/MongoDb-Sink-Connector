@@ -16,14 +16,13 @@
 
 package org.radarcns.serialization;
 
+import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.sink.SinkRecord;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import javax.activation.UnsupportedDataTypeException;
 
 public class RecordConverterFactory {
     private final Map<String, RecordConverter> genericConverterMap;
@@ -44,9 +43,13 @@ public class RecordConverterFactory {
     }
 
     public RecordConverter getRecordConverter(SinkRecord record)
-            throws UnsupportedDataTypeException {
+            throws DataException {
         RecordConverter converter = null;
 
+        if (record.valueSchema() == null) {
+            throw new DataException("Cannot process data from topic "
+                    + record.topic() + " without a schema");
+        }
         if (record.keySchema() != null) {
             converter = genericConverterMap.get(record.keySchema().name() + "-"
                     + record.valueSchema().name());
@@ -55,7 +58,7 @@ public class RecordConverterFactory {
             converter = genericConverterMap.get(record.valueSchema().name());
         }
         if (converter == null) {
-            throw new UnsupportedDataTypeException("Cannot find a suitable RecordConverter class "
+            throw new DataException("Cannot find a suitable RecordConverter class "
                     + "for record with schema " + record.valueSchema()
                     + " in topic " + record.topic());
         }

@@ -19,7 +19,7 @@ package org.radarcns.mongodb;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.AbstractConfig;
-import org.apache.kafka.connect.errors.ConnectException;
+import org.apache.kafka.connect.errors.IllegalWorkerStateException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
 import org.radarcns.serialization.RecordConverterFactory;
@@ -72,11 +72,10 @@ public class MongoDbSinkTask extends SinkTask {
 
         RecordConverterFactory converterFactory;
         try {
-            converterFactory = (RecordConverterFactory)config.getClass(RECORD_CONVERTER).newInstance();
+            converterFactory = (RecordConverterFactory)config.getClass(RECORD_CONVERTER)
+                    .newInstance();
         } catch (InstantiationException | IllegalAccessException | ClassCastException e) {
-            throw new ConnectException("Cannot instantiate RecordConverterFactory '"
-                    + config.getClass(RECORD_CONVERTER).getName() + "' from property '"
-                    + RECORD_CONVERTER, e);
+            throw new IllegalWorkerStateException("Got illegal RecordConverterClass", e);
         }
         MongoWrapper mongoHelper = new MongoWrapper(config);
 

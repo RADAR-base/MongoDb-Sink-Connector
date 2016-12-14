@@ -22,8 +22,10 @@ import org.apache.kafka.common.utils.AppInfoParser;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkConnector;
+import org.radarcns.serialization.RecordConverter;
 import org.radarcns.serialization.RecordConverterFactory;
 import org.radarcns.util.Utility;
+import org.radarcns.util.ValidClass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -123,7 +125,8 @@ public class MongoDbSinkConnector extends SinkConnector {
                 + "as a placeholder for the originating topic name.\n"
                 + "For example, `kafka_${topic}` for the topic `orders` will map to the "
                 + "collection name `kafka_orders`.");
-        conf.define(RECORD_CONVERTER, ConfigDef.Type.CLASS, RecordConverterFactory.class, MEDIUM,
+        conf.define(RECORD_CONVERTER, ConfigDef.Type.CLASS, RecordConverterFactory.class,
+                ValidClass.isSubclassOf(RecordConverterFactory.class), MEDIUM,
                 "RecordConverterFactory that returns classes to convert Kafka SinkRecords to BSON "
                 + "documents.");
         return conf;

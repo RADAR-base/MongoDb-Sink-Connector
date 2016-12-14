@@ -16,6 +16,7 @@
 
 package org.radarcns.serialization;
 
+import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.bson.Document;
 
@@ -40,6 +41,7 @@ public interface RecordConverter {
      * Convert a Kafka record to a BSON document.
      * @param record record to convert
      * @return BSON document
+     * @throws DataException if the record cannot be converted by the current converter.
      */
-    Document convert(SinkRecord record);
+    Document convert(SinkRecord record) throws DataException;
 }
