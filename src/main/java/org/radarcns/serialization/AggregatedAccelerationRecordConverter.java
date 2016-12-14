@@ -1,3 +1,19 @@
+/*
+ *  Copyright 2016 Kings College London and The Hyve
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.radarcns.serialization;
 
 import org.apache.kafka.connect.data.Struct;
@@ -10,18 +26,15 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import javax.annotation.Nonnull;
-
-import static org.radarcns.mongodb.MongoDbSinkConnector.COLL_DOUBLE_ARRAY;
-
-public class AggregatedAccelerationRecordConverter implements RecordConverter<Document> {
+public class AggregatedAccelerationRecordConverter implements RecordConverter {
     @Override
     public Collection<String> supportedSchemaNames() {
-        return Collections.singleton(COLL_DOUBLE_ARRAY);
+        return Collections.singleton("org.radarcns.key.WindowedKey-"
+                + "org.radarcns.aggregator.DoubleArrayAggegator");
     }
 
     @Override
-    public Document convert(@Nonnull SinkRecord record) {
+    public Document convert(SinkRecord record) {
         Struct key = (Struct) record.key();
         Struct value = (Struct) record.value();
 
@@ -39,13 +52,13 @@ public class AggregatedAccelerationRecordConverter implements RecordConverter<Do
                 .append("end", new BsonDateTime(key.getInt64("end")));
     }
 
-    private static Document accCompToDoc(List<Double> component){
+    private static Document accCompToDoc(List<Double> component) {
         return new Document("x", component.get(0))
                 .append("y", component.get(1))
                 .append("z", component.get(2));
     }
 
-    private static Document accQuartileToDoc(List<List<Double>> list){
+    private static Document accQuartileToDoc(List<List<Double>> list) {
         return new Document("x", Utility.extractQuartile(list.get(0)))
                 .append("y", Utility.extractQuartile(list.get(1)))
                 .append("z", Utility.extractQuartile(list.get(2)));

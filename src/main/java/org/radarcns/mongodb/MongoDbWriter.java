@@ -1,11 +1,29 @@
+/*
+ *  Copyright 2016 Kings College London and The Hyve
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.radarcns.mongodb;
 
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.errors.ConnectException;
+import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.bson.Document;
 import org.radarcns.serialization.RecordConverter;
+import org.radarcns.serialization.RecordConverterFactory;
 import org.radarcns.util.Monitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,9 +37,6 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import javax.activation.UnsupportedDataTypeException;
 
 /**
  * A thread that reads Kafka SinkRecords from a buffer and writes them to a MongoDB database.
@@ -33,80 +48,74 @@ public class MongoDbWriter extends Thread implements Closeable {
     private static final Logger log = LoggerFactory.getLogger(MongoDbWriter.class);
     private static final int NUM_RETRIES = 3;
 
-    private final AtomicInteger count;
     private final MongoWrapper mongoHelper;
-    private final Map<String, RecordConverter<Document>> converterMapping;
     private final BlockingQueue<SinkRecord> buffer;
 
     private final AtomicBoolean stopping;
     private final Map<TopicPartition, Long> latestOffsets;
+    private final RecordConverterFactory converterFactory;
+    private final Monitor monitor;
     private Throwable exception;
 
     /**
      * Creates a writer with a MongoDB client.
      *
-     * @param props sink properties
+     * @param mongoHelper MongoDB connection
      * @param buffer buffer
-     * @param converters converters from records to a MongoDB document
+     * @param converterFactory converters factory for converters from records to MongoDB documents
      * @param timer timer to run a monitoring task on
      * @throws ConnectException if cannot connect to the MongoDB database.
      */
-    public MongoDbWriter(Map<String, String> props, BlockingQueue<SinkRecord> buffer,
-                         List<RecordConverter<Document>> converters, Timer timer)
+    public MongoDbWriter(MongoWrapper mongoHelper, BlockingQueue<SinkRecord> buffer,
+                         RecordConverterFactory converterFactory, Timer timer)
             throws ConnectException {
+        super("MongoDB-writer");
         this.buffer = buffer;
-        count = new AtomicInteger(0);
-
-        Monitor monitor = new Monitor(log, count, "have been written in MongoDB", this.buffer);
-        timer.schedule(monitor, 0, 30000);
+        this.monitor = new Monitor(log, "have been written in MongoDB", this.buffer);
+        timer.schedule(monitor, 0, 30_000);
 
         latestOffsets = new HashMap<>();
         stopping = new AtomicBoolean(false);
 
-        mongoHelper = new MongoWrapper(props);
+        this.mongoHelper = mongoHelper;
 
         if (!mongoHelper.checkConnection()) {
             mongoHelper.close();
             throw new ConnectException("Cannot connect to MongoDB database");
         }
 
-        converterMapping = new HashMap<>();
-        for (RecordConverter<Document> converter : converters) {
-            for (String supportedSchema : converter.supportedSchemaNames()) {
-                converterMapping.put(supportedSchema, converter);
-            }
-        }
+        this.converterFactory = converterFactory;
 
         exception = null;
     }
 
     @Override
     public void run() {
+        log.info("Started MongoDbWriter");
+
         while (!stopping.get()) {
             SinkRecord record;
             try {
                 record = buffer.take();
             } catch (InterruptedException e) {
-                log.warn("Interrupted while polling buffer", e);
+                log.debug("Interrupted while polling buffer", e);
                 continue;
             }
             store(record, 0);
             processedRecord(record);
         }
 
-        if (mongoHelper != null) {
-            mongoHelper.close();
-        }
+        mongoHelper.close();
 
-        log.info("Writer DONE!");
+        log.info("Stopped MongoDbWriter");
     }
 
     private void store(SinkRecord record, int tries) {
         try {
             Document doc = getDoc(record);
             mongoHelper.store(record.topic(), doc);
-            count.incrementAndGet();
-        } catch (UnsupportedDataTypeException e) {
+            monitor.increment();
+        } catch (DataException e) {
             log.error("Unsupported MongoDB data type in data from Kafka. Skipping record {}",
                     record, e);
             setException(e);
@@ -132,17 +141,14 @@ public class MongoDbWriter extends Thread implements Closeable {
         this.exception = ex;
     }
 
-    private Document getDoc(SinkRecord record) throws UnsupportedDataTypeException {
-        RecordConverter<Document> converter = converterMapping.get(record.valueSchema().name());
-        if (converter == null) {
-            throw new UnsupportedDataTypeException(record.valueSchema() + " is not supported yet.");
-        }
+    private Document getDoc(SinkRecord record) throws DataException {
+        RecordConverter converter = converterFactory.getRecordConverter(record);
 
         try {
             return converter.convert(record);
         } catch (Exception e) {
             log.error("Error while converting {}.", record, e);
-            throw new UnsupportedDataTypeException("Record cannot be converted to a Document");
+            throw new DataException("Record cannot be converted to a Document", e);
         }
     }
 
@@ -189,7 +195,7 @@ public class MongoDbWriter extends Thread implements Closeable {
      */
     @Override
     public void close() {
-        log.info("Writer is shutting down");
+        log.debug("Closing MongoDB writer");
         stopping.set(true);
         interrupt();
     }
