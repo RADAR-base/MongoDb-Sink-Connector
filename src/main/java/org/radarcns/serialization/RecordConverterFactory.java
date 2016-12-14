@@ -24,6 +24,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Factory for {@link RecordConverter} classes.
+ *
+ * These classes generate BSON {@link org.bson.Document} from Kafka {@link SinkRecord}. Override
+ * {@link #genericConverters()} to start with a different set of converters. Override
+ * {@link #getRecordConverter(SinkRecord)} (preferably calling the super implementation) to use a
+ * different mechanism to allocate a converter to a record.
+ */
 public class RecordConverterFactory {
     private final Map<String, RecordConverter> genericConverterMap;
 
@@ -36,12 +44,28 @@ public class RecordConverterFactory {
         }
     }
 
+    /**
+     * Give a list of converters supporting generic data types.
+     *
+     * The converters themselves will * indicate what data types they support, using the
+     * {@link RecordConverter#supportedSchemaNames()} method. Override to have a different set
+     * of supported converters.
+     */
     protected List<RecordConverter> genericConverters() {
         return Arrays.asList(
                 new AggregatedAccelerationRecordConverter(),
                 new DoubleAggregatedRecordConverter());
     }
 
+    /**
+     * Generate a converter from given record.
+     *
+     * By default, this returns generic datatype converters. Override to return specific topic-based
+     * converters.
+     * @param record record to convert
+     * @return {@link RecordConverter} capable of converting that record
+     * @throws DataException if no suitable {@link RecordConverter} was found.
+     */
     public RecordConverter getRecordConverter(SinkRecord record)
             throws DataException {
         if (record.valueSchema() == null) {
