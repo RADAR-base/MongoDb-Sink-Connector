@@ -114,13 +114,13 @@ public class MongoDbSinkConnector extends SinkConnector {
         conf.define(MONGO_PASSWORD, ConfigDef.Type.STRING, null, MEDIUM,
                 "Password to connect to MongoDB database. If not set, no credentials are used.",
                 "MongoDB", 4, ConfigDef.Width.SHORT, "MongoDB password",
+                Collections.singletonList(MONGO_USERNAME));
         conf.define(COLLECTION_FORMAT, ConfigDef.Type.STRING, "{$topic}", MEDIUM,
                 "A format string for the destination collection name, which may contain `${topic}`"
                 + "as a placeholder for the originating topic name.\n"
                 + "For example, `kafka_${topic}` for the topic `orders` will map to the "
                 + "collection name `kafka_orders`.", "MongoDB", 5, ConfigDef.Width.LONG,
                 "MongoDB collection name format");
-        Collections.singletonList(MONGO_USERNAME));
         conf.define(TOPICS_CONFIG, ConfigDef.Type.LIST, NO_DEFAULT_VALUE, HIGH,
                 "List of topics to be streamed.");
         conf.define(BUFFER_CAPACITY, ConfigDef.Type.INT, 20_000, ConfigDef.Range.atLeast(1), LOW,
