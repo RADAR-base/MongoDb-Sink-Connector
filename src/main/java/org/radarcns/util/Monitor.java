@@ -38,7 +38,7 @@ public class Monitor extends TimerTask {
 
     public Monitor(Logger log, String message, Collection<?> buffer) {
         if (log == null) {
-            throw new NullPointerException("Parameters log and count may not be null");
+            throw new IllegalArgumentException("Argument log may not be null");
         }
         this.count = new AtomicInteger(0);
         this.log = log;
