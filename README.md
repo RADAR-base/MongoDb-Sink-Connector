@@ -37,13 +37,16 @@ The following assumes you have Kafka and the Confluent Schema Registry running.
 <tr>
 <td>mongo.host</td><td>MongoDB host name to write data to</td><td>string</td><td></td><td></td><td>high</td></tr>
 <tr>
-<td>record.converter.classes</td><td>List of classes to convert Kafka SinkRecords to BSON documents.</td><td>list</td><td></td><td></td><td>high</td></tr>
+<td>topics</td><td>List of topics to be streamed.</td><td>list</td><td></td><td></td><td>high</td></tr>
 <tr>
-<td>topics</td><td>List of topics. For each topic, optionally make a property with as key the topic and as value the MongoDB collection the data from that topic should be stored in.</td><td>list</td><td></td><td></td><td>high</td></tr>
+<td>collection.format</td><td>A format string for the destination collection name, which may contain `${topic}`as a placeholder for the originating topic name.
+For example, `kafka_${topic}` for the topic `orders` will map to the collection name `kafka_orders`.</td><td>string</td><td>{$topic}</td><td></td><td>medium</td></tr>
 <tr>
 <td>mongo.password</td><td>Password to connect to MongoDB database. If not set, no credentials are used.</td><td>string</td><td>null</td><td></td><td>medium</td></tr>
 <tr>
 <td>mongo.username</td><td>Username to connect to MongoDB database. If not set, no credentials are used.</td><td>string</td><td>null</td><td></td><td>medium</td></tr>
+<tr>
+<td>record.converter.class</td><td>RecordConverterFactory that returns classes to convert Kafka SinkRecords to BSON documents.</td><td>class</td><td>class org.radarcns.serialization.RecordConverterFactory</td><td></td><td>medium</td></tr>
 <tr>
 <td>buffer.capacity</td><td>Maximum number of items in a MongoDB writer buffer. Once the buffer becomes full,the task fails.</td><td>int</td><td>20000</td><td>[1,...]</td><td>low</td></tr>
 <tr>
@@ -62,7 +65,7 @@ key.converter.schema.registry.url=
   - cluster.properties (optional)
 6. Run your connector
 ```shell
-export CLASSPATH=mongoconnector-1.0.jar
+export CLASSPATH=kafka-connectors-mongodb-sink-0.1-SNAPSHOT.jar
 ```
   - standalone mode
 
@@ -76,7 +79,7 @@ export CLASSPATH=mongoconnector-1.0.jar
   ```
 7. stop your connector using `CTRL-C`
 
-To use further data types, extend `org.radarcns.serialization.RecordConverter` and add the new class to the list in the `record.converters.classes` property.
+To use further data types, extend `org.radarcns.serialization.RecordConverterFactory` and set the new class name in the `record.converter.class` property.
  
 ### Tuning
 The only available setting is the number of records returned in a single call to `poll()` (i.e. `consumer.max.poll.records` param inside `standalone.properties`)

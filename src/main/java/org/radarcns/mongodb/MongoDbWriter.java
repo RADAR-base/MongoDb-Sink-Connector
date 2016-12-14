@@ -22,6 +22,7 @@ import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.bson.Document;
 import org.radarcns.serialization.RecordConverter;
+import org.radarcns.serialization.RecordConverterFactory;
 import org.radarcns.util.Monitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +36,6 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.activation.UnsupportedDataTypeException;
 
@@ -49,13 +49,13 @@ public class MongoDbWriter extends Thread implements Closeable {
     private static final Logger log = LoggerFactory.getLogger(MongoDbWriter.class);
     private static final int NUM_RETRIES = 3;
 
-    private final AtomicInteger count;
     private final MongoWrapper mongoHelper;
-    private final Map<String, RecordConverter> converterMapping;
     private final BlockingQueue<SinkRecord> buffer;
 
     private final AtomicBoolean stopping;
     private final Map<TopicPartition, Long> latestOffsets;
+    private final RecordConverterFactory converterFactory;
+    private final Monitor monitor;
     private Throwable exception;
 
     /**
@@ -63,17 +63,15 @@ public class MongoDbWriter extends Thread implements Closeable {
      *
      * @param mongoHelper MongoDB connection
      * @param buffer buffer
-     * @param converters converters from records to a MongoDB document
+     * @param converterFactory converters factory for converters from records to MongoDB documents
      * @param timer timer to run a monitoring task on
      * @throws ConnectException if cannot connect to the MongoDB database.
      */
     public MongoDbWriter(MongoWrapper mongoHelper, BlockingQueue<SinkRecord> buffer,
-                         List<RecordConverter> converters, Timer timer)
+                         RecordConverterFactory converterFactory, Timer timer)
             throws ConnectException {
         this.buffer = buffer;
-        count = new AtomicInteger(0);
-
-        Monitor monitor = new Monitor(log, count, "have been written in MongoDB", this.buffer);
+        this.monitor = new Monitor(log, "have been written in MongoDB", this.buffer);
         timer.schedule(monitor, 0, 30_000);
 
         latestOffsets = new HashMap<>();
@@ -86,12 +84,7 @@ public class MongoDbWriter extends Thread implements Closeable {
             throw new ConnectException("Cannot connect to MongoDB database");
         }
 
-        converterMapping = new HashMap<>();
-        for (RecordConverter converter : converters) {
-            for (String supportedSchema : converter.supportedSchemaNames()) {
-                converterMapping.put(supportedSchema, converter);
-            }
-        }
+        this.converterFactory = converterFactory;
 
         exception = null;
     }
@@ -121,7 +114,7 @@ public class MongoDbWriter extends Thread implements Closeable {
         try {
             Document doc = getDoc(record);
             mongoHelper.store(record.topic(), doc);
-            count.incrementAndGet();
+            monitor.increment();
         } catch (UnsupportedDataTypeException e) {
             log.error("Unsupported MongoDB data type in data from Kafka. Skipping record {}",
                     record, e);
@@ -149,7 +142,7 @@ public class MongoDbWriter extends Thread implements Closeable {
     }
 
     private Document getDoc(SinkRecord record) throws UnsupportedDataTypeException {
-        RecordConverter converter = getConverter(record);
+        RecordConverter converter = converterFactory.getRecordConverter(record);
 
         try {
             return converter.convert(record);
@@ -157,21 +150,6 @@ public class MongoDbWriter extends Thread implements Closeable {
             log.error("Error while converting {}.", record, e);
             throw new UnsupportedDataTypeException("Record cannot be converted to a Document");
         }
-    }
-
-    private RecordConverter getConverter(SinkRecord record) throws UnsupportedDataTypeException {
-        RecordConverter converter = null;
-        if (record.keySchema() != null) {
-            converter = converterMapping.get(record.keySchema().name() + "-"
-                    + record.valueSchema().name());
-        }
-        if (converter == null) {
-            converter = converterMapping.get(record.valueSchema().name());
-        }
-        if (converter == null) {
-            throw new UnsupportedDataTypeException(record.valueSchema() + " is not supported yet.");
-        }
-        return converter;
     }
 
     /**

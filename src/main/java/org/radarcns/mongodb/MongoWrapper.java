@@ -27,17 +27,15 @@ import com.mongodb.client.model.UpdateOptions;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.bson.Document;
-import org.radarcns.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import static com.mongodb.client.model.Filters.eq;
-import static org.apache.kafka.connect.sink.SinkTask.TOPICS_CONFIG;
+import static org.radarcns.mongodb.MongoDbSinkConnector.COLLECTION_FORMAT;
 import static org.radarcns.mongodb.MongoDbSinkConnector.MONGO_DATABASE;
 import static org.radarcns.mongodb.MongoDbSinkConnector.MONGO_HOST;
 import static org.radarcns.mongodb.MongoDbSinkConnector.MONGO_PASSWORD;
@@ -50,9 +48,9 @@ import static org.radarcns.mongodb.MongoDbSinkConnector.MONGO_USERNAME;
 public class MongoWrapper implements Closeable {
     private final Logger log = LoggerFactory.getLogger(MongoWrapper.class);
     private final String dbName;
-    private final Map<String, String> mapping;
     private final MongoClient mongoClient;
     private final List<MongoCredential> credentials;
+    private final String collectionFormat;
 
     /**
      * Create a new {@link MongoClient}.
@@ -61,7 +59,7 @@ public class MongoWrapper implements Closeable {
      * @throws ConnectException a MongoClient could not be created.
      */
     public MongoWrapper(AbstractConfig config) {
-        mapping = Utility.parseArrayConfig(config, TOPICS_CONFIG);
+        collectionFormat = config.getString(COLLECTION_FORMAT);
         dbName = config.getString(MONGO_DATABASE);
         credentials = createCredentials(config);
         mongoClient = createClient(config);
@@ -119,10 +117,7 @@ public class MongoWrapper implements Closeable {
      */
     public void store(String topic, Document doc) throws MongoException {
         MongoDatabase database = mongoClient.getDatabase(dbName);
-        String collectionName = mapping.get(topic);
-        if (collectionName == null) {
-            collectionName = topic;
-        }
+        String collectionName = collectionFormat.replace("{$topic}", topic);
         MongoCollection<Document> collection = database.getCollection(collectionName);
 
         collection.replaceOne(eq("_id", doc.get("_id")), doc, (new UpdateOptions()).upsert(true));

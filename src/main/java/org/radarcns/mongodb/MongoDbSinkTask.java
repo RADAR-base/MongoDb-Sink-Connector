@@ -19,24 +19,22 @@ package org.radarcns.mongodb;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.AbstractConfig;
+import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
-import org.radarcns.serialization.RecordConverter;
+import org.radarcns.serialization.RecordConverterFactory;
 import org.radarcns.util.Monitor;
-import org.radarcns.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.radarcns.mongodb.MongoDbSinkConnector.BUFFER_CAPACITY;
-import static org.radarcns.mongodb.MongoDbSinkConnector.RECORD_CONVERTERS;
+import static org.radarcns.mongodb.MongoDbSinkConnector.RECORD_CONVERTER;
 
 /**
  * Task to handle data coming from Kafka and send it to MongoDB.
@@ -48,15 +46,14 @@ import static org.radarcns.mongodb.MongoDbSinkConnector.RECORD_CONVERTERS;
  */
 public class MongoDbSinkTask extends SinkTask {
     private static final Logger log = LoggerFactory.getLogger(MongoDbSinkTask.class);
-
-    private final AtomicInteger count;
+    private final Monitor monitor;
 
     private BlockingQueue<SinkRecord> buffer;
     private MongoDbWriter writer;
     private Timer timer;
 
     public MongoDbSinkTask() {
-        count = new AtomicInteger(0);
+        monitor = new Monitor(log, "have been processed");
     }
 
     @Override
@@ -67,17 +64,23 @@ public class MongoDbSinkTask extends SinkTask {
     @Override
     public void start(Map<String, String> props) {
         timer = new Timer();
-        timer.schedule(new Monitor(log, count, "have been processed"), 0, 30_000);
+        timer.schedule(monitor, 0, 30_000);
 
         AbstractConfig config = new AbstractConfig(new MongoDbSinkConnector().config().parse(props));
 
         buffer = new ArrayBlockingQueue<>(config.getInt(BUFFER_CAPACITY));
 
-        List<RecordConverter> mongoConverters = Utility.loadRecordConverters(
-                getClass().getClassLoader(), config.getList(RECORD_CONVERTERS));
+        RecordConverterFactory converterFactory;
+        try {
+            converterFactory = (RecordConverterFactory)config.getClass(RECORD_CONVERTER).newInstance();
+        } catch (InstantiationException | IllegalAccessException | ClassCastException e) {
+            throw new ConnectException("Cannot instantiate RecordConverterFactory '"
+                    + config.getClass(RECORD_CONVERTER).getName() + "' from property '"
+                    + RECORD_CONVERTER, e);
+        }
         MongoWrapper mongoHelper = new MongoWrapper(config);
 
-        writer = new MongoDbWriter(mongoHelper, buffer, mongoConverters, timer);
+        writer = new MongoDbWriter(mongoHelper, buffer, converterFactory, timer);
         writer.start();
     }
 
@@ -85,7 +88,7 @@ public class MongoDbSinkTask extends SinkTask {
     public void put(Collection<SinkRecord> sinkRecords) {
         for (SinkRecord record : sinkRecords) {
             buffer.add(record);
-            count.incrementAndGet();
+            monitor.increment();
         }
     }
 

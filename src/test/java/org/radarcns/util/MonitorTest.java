@@ -30,25 +30,24 @@ import static org.mockito.Mockito.verify;
 
 public class MonitorTest {
     private Logger mockLogger;
-    private AtomicInteger count;
 
     @Before
     public void runBeforeTest() {
         mockLogger = mock(Logger.class);
-        count = new AtomicInteger(0);
     }
 
     @Test
     public void runWithoutBuffer() throws Exception {
-        Monitor monitor = new Monitor(mockLogger, count, "test");
+        Monitor monitor = new Monitor(mockLogger, "test");
         monitor.run();
         verify(mockLogger).info("{} {}", 0, "test");
-        assertEquals(0, count.get());
-        count.set(100);
+        assertEquals(0, monitor.getCount());
+        monitor.increment();
+        monitor.increment();
 
         monitor.run();
-        verify(mockLogger).info("{} {}", 100, "test");
-        assertEquals(0, count.get());
+        verify(mockLogger).info("{} {}", 2, "test");
+        assertEquals(0, monitor.getCount());
     }
 
     @Test
@@ -56,15 +55,16 @@ public class MonitorTest {
         Collection<String> buffer = new ArrayList<>();
         buffer.add("one");
 
-        Monitor monitor = new Monitor(mockLogger, count, "test", buffer);
+        Monitor monitor = new Monitor(mockLogger, "test", buffer);
         monitor.run();
         verify(mockLogger).info("{} {} {} records need to be processed.", 0, "test", 1);
-        assertEquals(0, count.get());
-        count.set(100);
+        assertEquals(0, monitor.getCount());
+        monitor.increment();
+        monitor.increment();
         buffer.clear();
 
         monitor.run();
-        verify(mockLogger).info("{} {} {} records need to be processed.", 100, "test", 0);
-        assertEquals(0, count.get());
+        verify(mockLogger).info("{} {} {} records need to be processed.", 2, "test", 0);
+        assertEquals(0, monitor.getCount());
     }
 }

@@ -22,6 +22,7 @@ import org.apache.kafka.common.utils.AppInfoParser;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkConnector;
+import org.radarcns.serialization.RecordConverterFactory;
 import org.radarcns.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,7 +50,8 @@ public class MongoDbSinkConnector extends SinkConnector {
     public static final String MONGO_PASSWORD = "mongo.password";
     public static final String MONGO_DATABASE = "mongo.database";
     public static final String BUFFER_CAPACITY = "buffer.capacity";
-    public static final String RECORD_CONVERTERS = "record.converter.classes";
+    public static final String COLLECTION_FORMAT = "collection.format";
+    public static final String RECORD_CONVERTER = "record.converter.class";
 
     private Map<String, String> connectorConfig;
 
@@ -112,14 +114,18 @@ public class MongoDbSinkConnector extends SinkConnector {
                 "MongoDB", 4, ConfigDef.Width.SHORT, "MongoDB password",
                 Collections.singletonList(MONGO_USERNAME));
         conf.define(TOPICS_CONFIG, ConfigDef.Type.LIST, NO_DEFAULT_VALUE, HIGH,
-                "List of topics. For each topic, optionally make a property with as key the topic "
-                        + "and as value the MongoDB collection the data from that topic should be "
-                        + "stored in.");
+                "List of topics to be streamed.");
         conf.define(BUFFER_CAPACITY, ConfigDef.Type.INT, 20_000, ConfigDef.Range.atLeast(1), LOW,
                 "Maximum number of items in a MongoDB writer buffer. Once the buffer becomes full,"
-                        + "the task fails.");
-        conf.define(RECORD_CONVERTERS, ConfigDef.Type.LIST, NO_DEFAULT_VALUE, HIGH,
-                "List of classes to convert Kafka SinkRecords to BSON documents.");
+                + "the task fails.");
+        conf.define(COLLECTION_FORMAT, ConfigDef.Type.STRING, "{$topic}", MEDIUM,
+                "A format string for the destination collection name, which may contain `${topic}`"
+                + "as a placeholder for the originating topic name.\n"
+                + "For example, `kafka_${topic}` for the topic `orders` will map to the "
+                + "collection name `kafka_orders`.");
+        conf.define(RECORD_CONVERTER, ConfigDef.Type.CLASS, RecordConverterFactory.class, MEDIUM,
+                "RecordConverterFactory that returns classes to convert Kafka SinkRecords to BSON "
+                + "documents.");
         return conf;
     }
 
