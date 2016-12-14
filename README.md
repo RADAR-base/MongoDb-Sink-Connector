@@ -17,11 +17,11 @@ The following assumes you have Kafka and the Confluent Schema Registry running.
 
 ## Quickstart for RADAR-CNS
 
-1. Build the project. Go inside the project folder and run
+- Build the project. Go inside the project folder and run
 ```shell
 ./gradlew clean build
 ```
-2. Modify `sink.properties` file according your cluster. The following properties are supported:
+- Modify `sink.properties` file according your cluster. The following properties are supported:
 
 <table class="data-table"><tbody>
 <tr>
@@ -53,17 +53,20 @@ For example, `kafka_${topic}` for the topic `orders` will map to the collection 
 <td>mongo.port</td><td>MongoDB port</td><td>int</td><td>27017</td><td>[1,...]</td><td>low</td></tr>
 </tbody></table>
 
-3. (optional) Modify `standalone.properties` and `standalone.properties` file according your cluster instances. You may need to update the bootstraps and Schema Registry locations.
+- (optional) Modify `standalone.properties` and `standalone.properties` file according your cluster instances. You may need to update the bootstraps and Schema Registry locations.
+
 ```ini
 bootstrap.servers=
 key.converter.schema.registry.url=
 ```
-4. Copy your jar file inside your Kafka Server
-5. Copy all configuration files inside your Kafka Server
+
+- Copy your jar file inside your Kafka Server
+- Copy all configuration files inside your Kafka Server
   - sink.properties 
   - standalone.properties (optional)
   - cluster.properties (optional)
-6. Run your connector
+- Run your connector
+
 ```shell
 export CLASSPATH=kafka-connectors-mongodb-sink-0.1-SNAPSHOT.jar
 ```
@@ -77,7 +80,7 @@ export CLASSPATH=kafka-connectors-mongodb-sink-0.1-SNAPSHOT.jar
   ```shell
   /bin/connect-distributed cluster.properties sink.properties
   ```
-7. stop your connector using `CTRL-C`
+- stop your connector using `CTRL-C`
 
 To use further data types, extend `org.radarcns.serialization.RecordConverterFactory` and set the new class name in the `record.converter.class` property.
  
