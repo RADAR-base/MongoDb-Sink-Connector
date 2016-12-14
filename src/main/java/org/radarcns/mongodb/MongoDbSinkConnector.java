@@ -22,7 +22,6 @@ import org.apache.kafka.common.utils.AppInfoParser;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkConnector;
-import org.radarcns.serialization.RecordConverter;
 import org.radarcns.serialization.RecordConverterFactory;
 import org.radarcns.util.Utility;
 import org.radarcns.util.ValidClass;
