@@ -69,6 +69,7 @@ public class MongoDbWriter extends Thread implements Closeable {
     public MongoDbWriter(MongoWrapper mongoHelper, BlockingQueue<SinkRecord> buffer,
                          RecordConverterFactory converterFactory, Timer timer)
             throws ConnectException {
+        super("MongoDB-writer");
         this.buffer = buffer;
         this.monitor = new Monitor(log, "have been written in MongoDB", this.buffer);
         timer.schedule(monitor, 0, 30_000);
@@ -90,23 +91,23 @@ public class MongoDbWriter extends Thread implements Closeable {
 
     @Override
     public void run() {
+        log.info("Started MongoDbWriter");
+
         while (!stopping.get()) {
             SinkRecord record;
             try {
                 record = buffer.take();
             } catch (InterruptedException e) {
-                log.warn("Interrupted while polling buffer", e);
+                log.debug("Interrupted while polling buffer", e);
                 continue;
             }
             store(record, 0);
             processedRecord(record);
         }
 
-        if (mongoHelper != null) {
-            mongoHelper.close();
-        }
+        mongoHelper.close();
 
-        log.info("Writer DONE!");
+        log.info("Stopped MongoDbWriter");
     }
 
     private void store(SinkRecord record, int tries) {
@@ -194,7 +195,7 @@ public class MongoDbWriter extends Thread implements Closeable {
      */
     @Override
     public void close() {
-        log.info("Writer is shutting down");
+        log.debug("Closing MongoDB writer");
         stopping.set(true);
         interrupt();
     }

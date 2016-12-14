@@ -16,6 +16,7 @@
 
 package org.radarcns.serialization;
 
+import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.sink.SinkRecord;
 
@@ -44,24 +45,44 @@ public class RecordConverterFactory {
 
     public RecordConverter getRecordConverter(SinkRecord record)
             throws DataException {
-        RecordConverter converter = null;
-
         if (record.valueSchema() == null) {
             throw new DataException("Cannot process data from topic "
                     + record.topic() + " without a schema");
         }
+
+        for (String option : generateNameOptions(record)) {
+            RecordConverter converter = genericConverterMap.get(option);
+            if (converter != null) {
+                return converter;
+            }
+        }
+
+        throw new DataException("Cannot find a suitable RecordConverter class "
+                + "for record with schema " + record.valueSchema().name()
+                + " in topic " + record.topic());
+    }
+
+    private String[] generateNameOptions(SinkRecord record) {
+        String valueSchemaName = record.valueSchema().name();
+        String valueSchemaType = record.valueSchema().type().getName();
+
         if (record.keySchema() != null) {
-            converter = genericConverterMap.get(record.keySchema().name() + "-"
-                    + record.valueSchema().name());
+            String keySchemaName = record.keySchema().name();
+            String keySchemaType = record.keySchema().type().getName();
+            return new String[] {
+                    keySchemaName + "-" + valueSchemaName,
+                    keySchemaType + "-" + valueSchemaName,
+                    valueSchemaName,
+                    keySchemaName + "-" + valueSchemaType,
+                    keySchemaType + "-" + valueSchemaType,
+                    valueSchemaType,
+            };
+        } else {
+            return new String[] {
+                    valueSchemaName,
+                    valueSchemaType,
+            };
         }
-        if (converter == null) {
-            converter = genericConverterMap.get(record.valueSchema().name());
-        }
-        if (converter == null) {
-            throw new DataException("Cannot find a suitable RecordConverter class "
-                    + "for record with schema " + record.valueSchema()
-                    + " in topic " + record.topic());
-        }
-        return converter;
+
     }
 }
