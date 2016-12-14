@@ -19,8 +19,14 @@ package org.radarcns.util;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
+import org.bson.BsonDouble;
+import org.bson.Document;
 import org.junit.Test;
 
+import java.util.Arrays;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.junit.Assert.assertEquals;
 
 public class UtilityTest {
@@ -38,5 +44,13 @@ public class UtilityTest {
         s.put("start", 1000L);
         s.put("end", 2000L);
         assertEquals("myUser-mySource-1000-2000", Utility.intervalKeyToMongoKey(s));
+    }
+
+    @Test
+    public void extractQuartile() {
+        assertThat(Utility.extractQuartile(Arrays.asList(0.1, 0.2, 0.3)),
+                contains(new Document("25", new BsonDouble(0.1)),
+                        new Document("50", new BsonDouble(0.2)),
+                        new Document("75", new BsonDouble(0.3))));
     }
 }
