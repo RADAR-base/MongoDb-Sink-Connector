@@ -33,7 +33,8 @@ public interface RecordConverter {
      * The schema names used are the fully qualified (including namespace) and case-sensitive names.
      * If the converter requires records with both a key and a value schema, the returned format is
      * "KeySchemaName-ValueSchemaName". If the key is not required, only "ValueSchemaName" may be
-     * returned.
+     * returned. KeySchemaName and ValueSchemaName may be substituted by the Object class that it
+     * supports. If the converter supports all types of data, return null.
      */
     Collection<String> supportedSchemaNames();
 
