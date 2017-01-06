@@ -47,14 +47,15 @@ public class RecordConverterFactory {
     /**
      * Give a list of converters supporting generic data types.
      *
-     * The converters themselves will * indicate what data types they support, using the
+     * The converters themselves will indicate what data types they support, using the
      * {@link RecordConverter#supportedSchemaNames()} method. Override to have a different set
      * of supported converters.
      */
     protected List<RecordConverter> genericConverters() {
         return Arrays.asList(
                 new AggregatedAccelerationRecordConverter(),
-                new DoubleAggregatedRecordConverter());
+                new DoubleAggregatedRecordConverter(),
+                new GenericRecordConverter());
     }
 
     /**
@@ -99,11 +100,13 @@ public class RecordConverterFactory {
                     keySchemaName + "-" + valueSchemaType,
                     keySchemaType + "-" + valueSchemaType,
                     valueSchemaType,
+                    null,
             };
         } else {
             return new String[] {
                     valueSchemaName,
                     valueSchemaType,
+                    null,
             };
         }
 
