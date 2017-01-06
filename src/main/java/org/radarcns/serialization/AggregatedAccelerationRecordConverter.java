@@ -30,7 +30,7 @@ public class AggregatedAccelerationRecordConverter implements RecordConverter {
     @Override
     public Collection<String> supportedSchemaNames() {
         return Collections.singleton("org.radarcns.key.WindowedKey-"
-                + "org.radarcns.aggregator.DoubleArrayAggegator");
+                + "org.radarcns.aggregator.DoubleArrayAggregator");
     }
 
     @Override
