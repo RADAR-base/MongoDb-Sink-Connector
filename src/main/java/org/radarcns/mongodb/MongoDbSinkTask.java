@@ -20,8 +20,8 @@ import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.connect.errors.IllegalWorkerStateException;
-import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
+import org.apache.kafka.connect.sink.SinkRecord;
 import org.radarcns.serialization.RecordConverterFactory;
 import org.radarcns.util.Monitor;
 import org.slf4j.Logger;
@@ -86,15 +86,31 @@ public class MongoDbSinkTask extends SinkTask {
 
     @Override
     public void put(Collection<SinkRecord> sinkRecords) {
+        log.debug("Init put");
+        long startTime = System.nanoTime();
+
         for (SinkRecord record : sinkRecords) {
             buffer.add(record);
             monitor.increment();
+
+            log.debug("{} --> {}", new TopicPartition(record.topic(), record.kafkaPartition()).toString(), record.kafkaOffset());
         }
+
+        long endTime = System.nanoTime();
+        log.info("[PUT] Time-laps: {}nsec", endTime - startTime);
+        log.debug("End put");
     }
 
     @Override
     public void flush(Map<TopicPartition, OffsetAndMetadata> offsets) {
+        log.debug("Init flush");
+        long startTime = System.nanoTime();
+
         writer.flush(offsets);
+
+        long endTime = System.nanoTime();
+        log.info("[FLUSH] Time-laps: {}nsec", endTime - startTime);
+        log.debug("End flush");
     }
 
     @Override
