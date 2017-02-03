@@ -97,7 +97,7 @@ public class MongoDbSinkTask extends SinkTask {
         }
 
         long endTime = System.nanoTime();
-        log.info("[PUT] Time-laps: {}nsec", endTime - startTime);
+        log.debug("[PUT] Time-laps: {}nsec", endTime - startTime);
         log.debug("End put");
     }
 

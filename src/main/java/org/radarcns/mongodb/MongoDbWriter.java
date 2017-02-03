@@ -160,7 +160,7 @@ public class MongoDbWriter extends Thread implements Closeable {
     public synchronized void flush(Map<TopicPartition, OffsetAndMetadata> offsets)
             throws ConnectException {
 
-        log.debug("Init flush-w");
+        log.debug("Init flush-writer");
         long startTime = System.nanoTime();
 
         if (exception != null) {
@@ -172,7 +172,7 @@ public class MongoDbWriter extends Thread implements Closeable {
         for (TopicPartition tPart : offsets.keySet()) {
             log.debug("{} - {}", tPart.toString(), offsets.get(tPart).toString());
         }
-        log.info("LatestOffset: {}", latestOffsets.size());
+        log.debug("LatestOffset: {}", latestOffsets.size());
         for (TopicPartition tPart : latestOffsets.keySet()) {
             log.debug("{} - {}", tPart.toString(), latestOffsets.get(tPart).toString());
         }
@@ -186,7 +186,7 @@ public class MongoDbWriter extends Thread implements Closeable {
                     TopicPartition topicPartition = waitingIterator.next();
                     Long offset = latestOffsets.get(topicPartition);
 
-                    if (offset != null && offset >= offsets.get(topicPartition).offset()) {
+                    if (offset != null && (offset + 1) >= offsets.get(topicPartition).offset()) {
                         waitingIterator.remove();
                     }
                     else if(offset == null && offsets.get(topicPartition).offset() == 0){
@@ -196,8 +196,8 @@ public class MongoDbWriter extends Thread implements Closeable {
 
                 if (waiting.isEmpty()) {
                     long endTime = System.nanoTime();
-                    log.info("[FLUSH-W] Time-laps: {}nsec", endTime - startTime);
-                    log.debug("End flush-w");
+                    log.info("[FLUSH-WRITER] Time-laps: {}nsec", endTime - startTime);
+                    log.debug("End flush-writer");
 
                     return;
                 }
