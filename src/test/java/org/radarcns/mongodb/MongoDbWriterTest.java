@@ -51,28 +51,27 @@ public class MongoDbWriterTest {
         BlockingQueue<SinkRecord> buffer = new LinkedBlockingQueue<>();
 
         RecordConverterFactory factory = new RecordConverterFactory() {
-            private final RecordConverter converter = new RecordConverter() {
-                @Override
-                public Collection<String> supportedSchemaNames() {
-                    return Arrays.asList("string", "int32-int");
-                }
-
-                @Override
-                public Document convert(SinkRecord record) throws DataException {
-
-                    return new Document("mykey", new BsonString(record.value().toString()));
-                }
-            };
             @Override
             protected List<RecordConverter> genericConverters() {
-                return Collections.singletonList(converter);
+                return Collections.singletonList(new RecordConverter() {
+                    @Override
+                    public Collection<String> supportedSchemaNames() {
+                        return Arrays.asList("string", "int32-int");
+                    }
+
+                    @Override
+                    public Document convert(SinkRecord record) throws DataException {
+                        return new Document("mykey", new BsonString(record.value().toString()));
+                    }
+                });
             }
         };
 
         Timer timer = mock(Timer.class);
-        verify(timer).schedule(any(Monitor.class), eq(0L), eq(30_000L));
 
         MongoDbWriter writer = new MongoDbWriter(wrapper, buffer, factory, timer);
+        verify(timer).schedule(any(Monitor.class), eq(0L), eq(30_000L));
+
         Thread writerThread = new Thread(writer, "MongoDB-writer");
         writerThread.start();
 
