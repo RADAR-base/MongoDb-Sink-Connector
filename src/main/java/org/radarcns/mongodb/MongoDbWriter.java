@@ -24,6 +24,7 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import org.bson.Document;
 import org.radarcns.serialization.RecordConverter;
 import org.radarcns.serialization.RecordConverterFactory;
+import org.radarcns.util.DurationTimer;
 import org.radarcns.util.Monitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -119,10 +120,9 @@ public class MongoDbWriter implements Closeable, Runnable {
                     record, e);
             setException(e);
         } catch (Exception e){
-            tries++;
-            if (tries < NUM_RETRIES) {
+            if (tries + 1 < NUM_RETRIES) {
                 log.error("Exception while trying to add record {}, retrying", record, e);
-                store(record, tries);
+                store(record, tries + 1);
             } else {
                 setException(e);
                 log.error("Exception while trying to add record {}, skipping", record, e);
@@ -160,11 +160,11 @@ public class MongoDbWriter implements Closeable, Runnable {
             throws ConnectException {
 
         log.debug("Init flush-writer");
-        long startTime = System.nanoTime();
+        DurationTimer timer = new DurationTimer();
 
         if (exception != null) {
-            log.error("MongoDB writer is on illegal state");
-            throw new ConnectException("MongoDB writer is on illegal state", exception);
+            log.error("MongoDB writer is in an illegal state");
+            throw new ConnectException("MongoDB writer is in an illegal state", exception);
         }
 
         log.debug("Kafka Offsets: {}", offsets.size());
@@ -194,8 +194,7 @@ public class MongoDbWriter implements Closeable, Runnable {
                 }
 
                 if (waiting.isEmpty()) {
-                    long endTime = System.nanoTime();
-                    log.info("[FLUSH-WRITER] Time-laps: {}nsec", endTime - startTime);
+                    log.info("[FLUSH-WRITER] Time-elapsed: {} s", timer.duration());
                     log.debug("End flush-writer");
 
                     return;

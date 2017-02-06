@@ -20,9 +20,10 @@ import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.connect.errors.IllegalWorkerStateException;
-import org.apache.kafka.connect.sink.SinkTask;
 import org.apache.kafka.connect.sink.SinkRecord;
+import org.apache.kafka.connect.sink.SinkTask;
 import org.radarcns.serialization.RecordConverterFactory;
+import org.radarcns.util.DurationTimer;
 import org.radarcns.util.Monitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,22 +40,24 @@ import static org.radarcns.mongodb.MongoDbSinkConnector.RECORD_CONVERTER;
 /**
  * Task to handle data coming from Kafka and send it to MongoDB.
  *
- * It uses a buffer and a separate MongoDbWriter thread to achieve asynchronous writes. The buffer
- * is of fixed size (defined by {@link MongoDbSinkConnector#BUFFER_CAPACITY}) so if the MongoDB
- * connection is slower than data is being put from Kafka, the buffer will fill up. The put
+ * <p>It uses a buffer and a separate MongoDbWriter thread to achieve asynchronous writes. The
+ * buffer is of fixed size (defined by {@link MongoDbSinkConnector#BUFFER_CAPACITY}) so if the
+ * MongoDB connection is slower than data is being put from Kafka, the buffer will fill up. The put
  * operation will then at some point timeout.
  */
 public class MongoDbSinkTask extends SinkTask {
     private static final Logger log = LoggerFactory.getLogger(MongoDbSinkTask.class);
     private final Monitor monitor;
+    private final DurationTimer actionTimer;
 
     private BlockingQueue<SinkRecord> buffer;
     private MongoDbWriter writer;
     private Thread writerThread;
-    private Timer timer;
+    private Timer timerThread;
 
     public MongoDbSinkTask() {
         monitor = new Monitor(log, "have been processed");
+        actionTimer = new DurationTimer();
     }
 
     @Override
@@ -64,8 +67,8 @@ public class MongoDbSinkTask extends SinkTask {
 
     @Override
     public void start(Map<String, String> props) {
-        timer = new Timer();
-        timer.schedule(monitor, 0, 30_000);
+        timerThread = new Timer();
+        timerThread.schedule(monitor, 0, 30_000);
 
         AbstractConfig config = new AbstractConfig(
                 new MongoDbSinkConnector().config().parse(props));
@@ -76,10 +79,10 @@ public class MongoDbSinkTask extends SinkTask {
         try {
             converterFactory = (RecordConverterFactory)config.getClass(RECORD_CONVERTER)
                     .newInstance();
-        } catch (InstantiationException | IllegalAccessException | ClassCastException e) {
-            throw new IllegalWorkerStateException("Got illegal RecordConverterClass", e);
+        } catch (InstantiationException | IllegalAccessException | ClassCastException ex) {
+            throw new IllegalWorkerStateException("Got illegal RecordConverterClass", ex);
         }
-        writer = createMongoDbWriter(config, buffer, converterFactory, timer);
+        writer = createMongoDbWriter(config, buffer, converterFactory, timerThread);
         writerThread = new Thread(writer, "MongDB-writer");
         writerThread.start();
     }
@@ -95,30 +98,36 @@ public class MongoDbSinkTask extends SinkTask {
 
     @Override
     public void put(Collection<SinkRecord> sinkRecords) {
-        log.debug("Init put");
-        long startTime = System.nanoTime();
+        if (log.isDebugEnabled()) {
+            log.debug("Init put");
+            actionTimer.reset();
+        }
 
         for (SinkRecord record : sinkRecords) {
             buffer.add(record);
             monitor.increment();
 
-            log.debug("{} --> {}", new TopicPartition(record.topic(), record.kafkaPartition()).toString(), record.kafkaOffset());
+            if (log.isDebugEnabled()) {
+                log.debug("{} --> {}",
+                        new TopicPartition(record.topic(), record.kafkaPartition()),
+                        record.kafkaOffset());
+            }
         }
 
-        long endTime = System.nanoTime();
-        log.debug("[PUT] Time-laps: {}nsec", endTime - startTime);
-        log.debug("End put");
+        if (log.isDebugEnabled()) {
+            log.debug("[PUT] Time elapsed: {} s", actionTimer.duration());
+            log.debug("End put");
+        }
     }
 
     @Override
     public void flush(Map<TopicPartition, OffsetAndMetadata> offsets) {
         log.debug("Init flush");
-        long startTime = System.nanoTime();
+        actionTimer.reset();
 
         writer.flush(offsets);
 
-        long endTime = System.nanoTime();
-        log.info("[FLUSH] Time-laps: {}nsec", endTime - startTime);
+        log.info("[FLUSH] Time elapsed: {} s", actionTimer.duration());
         log.debug("End flush");
     }
 
@@ -126,7 +135,7 @@ public class MongoDbSinkTask extends SinkTask {
     public void stop() {
         writer.close();
         writerThread.interrupt();
-        timer.cancel();
+        timerThread.cancel();
         try {
             writerThread.join(30_000L);
         } catch (InterruptedException ex) {

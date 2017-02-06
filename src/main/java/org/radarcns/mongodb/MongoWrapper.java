@@ -86,10 +86,13 @@ public class MongoWrapper implements Closeable {
         int port = config.getInt(MONGO_PORT);
 
         try {
-            if (options == null) {
-                options = new MongoClientOptions.Builder().build();
+            MongoClientOptions actualOptions;
+            if (options != null) {
+                actualOptions = options;
+            } else {
+                actualOptions = new MongoClientOptions.Builder().build();
             }
-            return new MongoClient(new ServerAddress(host, port), credentials, options);
+            return new MongoClient(new ServerAddress(host, port), credentials, actualOptions);
         } catch (com.mongodb.MongoSocketOpenException e){
             log.error("Failed to create MongoDB client to {}:{} with credentials {}", host, port,
                     credentials, e);
