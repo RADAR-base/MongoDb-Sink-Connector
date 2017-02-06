@@ -83,7 +83,7 @@ public class MongoDbWriterTest {
                 SchemaBuilder.string().build(), "hi", 1001));
 
         writer.flush(Collections.singletonMap(
-                new TopicPartition("mytopic", 5), new OffsetAndMetadata(1000)));
+                new TopicPartition("mytopic", 5), new OffsetAndMetadata(1001)));
 
         verify(wrapper).store("mytopic", new Document("mykey", new BsonString("2")));
         verify(wrapper).store("mytopic", new Document("mykey", new BsonString("hi")));
