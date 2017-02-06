@@ -64,7 +64,7 @@ public class MongoDbSinkConnectorTest {
         assertNull(result.get(MONGO_USERNAME));
     }
 
-    @Test(expected=org.apache.kafka.common.config.ConfigException.class)
+    @Test(expected=ConfigException.class)
     public void configParseInvalidValue() throws Exception {
         Map<String, String> exampleConfig = new HashMap<>();
         exampleConfig.put(MONGO_HOST, "localhost");
@@ -76,7 +76,7 @@ public class MongoDbSinkConnectorTest {
         new MongoDbSinkConnector().config().parse(exampleConfig);
     }
 
-    @Test(expected=org.apache.kafka.common.config.ConfigException.class)
+    @Test(expected=ConfigException.class)
     public void configParseEmptyValue() throws Exception {
         Map<String, String> exampleConfig = new HashMap<>();
         exampleConfig.put(MONGO_HOST, "");
