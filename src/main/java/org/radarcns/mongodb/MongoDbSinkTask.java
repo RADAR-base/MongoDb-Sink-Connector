@@ -16,6 +16,7 @@
 
 package org.radarcns.mongodb;
 
+import java.util.HashMap;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.AbstractConfig;
@@ -49,6 +50,7 @@ public class MongoDbSinkTask extends SinkTask {
     private static final Logger log = LoggerFactory.getLogger(MongoDbSinkTask.class);
     private final Monitor monitor;
     private final DurationTimer actionTimer;
+    private final Map<TopicPartition, Long> latestOffsetPut;
 
     private BlockingQueue<SinkRecord> buffer;
     private MongoDbWriter writer;
@@ -58,6 +60,7 @@ public class MongoDbSinkTask extends SinkTask {
     public MongoDbSinkTask() {
         monitor = new Monitor(log, "have been processed");
         actionTimer = new DurationTimer();
+        latestOffsetPut = new HashMap<>();
     }
 
     @Override
@@ -104,13 +107,13 @@ public class MongoDbSinkTask extends SinkTask {
         }
 
         for (SinkRecord record : sinkRecords) {
+            TopicPartition partition = new TopicPartition(record.topic(), record.kafkaPartition());
+            latestOffsetPut.put(partition, record.kafkaOffset());
             buffer.add(record);
             monitor.increment();
 
             if (log.isDebugEnabled()) {
-                log.debug("{} --> {}",
-                        new TopicPartition(record.topic(), record.kafkaPartition()),
-                        record.kafkaOffset());
+                log.debug("{} --> {}", partition, record.kafkaOffset());
             }
         }
 
@@ -125,7 +128,14 @@ public class MongoDbSinkTask extends SinkTask {
         log.debug("Init flush");
         actionTimer.reset();
 
-        writer.flush(offsets);
+        Map<TopicPartition, Long> offsetsPut = new HashMap<>();
+        for (TopicPartition partition : offsets.keySet()) {
+            Long offset = latestOffsetPut.get(partition);
+            if (offset != null) {
+                offsetsPut.put(partition, offset);
+            }
+        }
+        writer.flush(offsetsPut);
 
         log.info("[FLUSH] Time elapsed: {} s", actionTimer.duration());
         log.debug("End flush");

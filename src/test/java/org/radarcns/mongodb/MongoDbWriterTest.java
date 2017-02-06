@@ -16,7 +16,19 @@
 
 package org.radarcns.mongodb;
 
-import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Timer;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.errors.DataException;
@@ -27,20 +39,6 @@ import org.junit.Test;
 import org.radarcns.serialization.RecordConverter;
 import org.radarcns.serialization.RecordConverterFactory;
 import org.radarcns.util.Monitor;
-
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Timer;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 public class MongoDbWriterTest {
     @Test
@@ -83,7 +81,7 @@ public class MongoDbWriterTest {
                 SchemaBuilder.string().build(), "hi", 1001));
 
         writer.flush(Collections.singletonMap(
-                new TopicPartition("mytopic", 5), new OffsetAndMetadata(1001)));
+                new TopicPartition("mytopic", 5), 1001L));
 
         verify(wrapper).store("mytopic", new Document("mykey", new BsonString("2")));
         verify(wrapper).store("mytopic", new Document("mykey", new BsonString("hi")));

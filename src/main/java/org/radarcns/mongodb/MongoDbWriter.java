@@ -16,7 +16,15 @@
 
 package org.radarcns.mongodb;
 
-import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import java.io.Closeable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Timer;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.errors.DataException;
@@ -28,16 +36,6 @@ import org.radarcns.util.DurationTimer;
 import org.radarcns.util.Monitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.Closeable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Timer;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * A thread that reads Kafka SinkRecords from a buffer and writes them to a MongoDB database.
@@ -156,7 +154,7 @@ public class MongoDbWriter implements Closeable, Runnable {
      * @param offsets offsets up to which to flush.
      * @throws ConnectException if the writer is interrupted.
      */
-    public synchronized void flush(Map<TopicPartition, OffsetAndMetadata> offsets)
+    public synchronized void flush(Map<TopicPartition, Long> offsets)
             throws ConnectException {
 
         log.debug("Init flush-writer");
@@ -178,34 +176,33 @@ public class MongoDbWriter implements Closeable, Runnable {
             }
         }
 
-        try {
-            List<TopicPartition> waiting = new ArrayList<>(offsets.keySet());
-            while (true) {
-                Iterator<TopicPartition> waitingIterator = waiting.iterator();
+        List<Map.Entry<TopicPartition, Long>> waiting = new ArrayList<>(offsets.entrySet());
 
-                while (waitingIterator.hasNext()) {
-                    TopicPartition topicPartition = waitingIterator.next();
-                    Long offset = latestOffsets.get(topicPartition);
+        while (true) {
+            Iterator<Map.Entry<TopicPartition, Long>> waitingIterator = waiting.iterator();
 
-                    if (offset != null && (offset + 1) >= offsets.get(topicPartition).offset()) {
-                        waitingIterator.remove();
-                    } else if (offset == null && offsets.get(topicPartition).offset() == 0) {
-                        waitingIterator.remove();
-                    }
+            while (waitingIterator.hasNext()) {
+                Map.Entry<TopicPartition, Long> partitionOffset = waitingIterator.next();
+                Long offsetWritten = latestOffsets.get(partitionOffset.getKey());
+
+                if (offsetWritten != null && offsetWritten >= partitionOffset.getValue()) {
+                    waitingIterator.remove();
                 }
+            }
 
-                if (waiting.isEmpty()) {
-                    log.info("[FLUSH-WRITER] Time-elapsed: {} s", timer.duration());
-                    log.debug("End flush-writer");
+            if (waiting.isEmpty()) {
+                log.info("[FLUSH-WRITER] Time-elapsed: {} s", timer.duration());
+                log.debug("End flush-writer");
 
-                    return;
-                }
+                return;
+            }
 
+            try {
                 // wait for additional messages to be processed
                 wait();
+            } catch (InterruptedException ex) {
+                throw new ConnectException("MongoDB writer was interrupted", ex);
             }
-        } catch (InterruptedException ex) {
-            throw new ConnectException("MongoDB writer was interrupted", ex);
         }
     }
 
