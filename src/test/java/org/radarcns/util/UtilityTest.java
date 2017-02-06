@@ -38,12 +38,12 @@ public class UtilityTest {
         sb.field("start", Schema.INT64_SCHEMA);
         sb.field("end", Schema.INT64_SCHEMA);
         Schema schema = sb.schema();
-        Struct s = new Struct(schema);
-        s.put("userID", "myUser");
-        s.put("sourceID", "mySource");
-        s.put("start", 1000L);
-        s.put("end", 2000L);
-        assertEquals("myUser-mySource-1000-2000", Utility.intervalKeyToMongoKey(s));
+        Struct struct = new Struct(schema);
+        struct.put("userID", "myUser");
+        struct.put("sourceID", "mySource");
+        struct.put("start", 1000L);
+        struct.put("end", 2000L);
+        assertEquals("myUser-mySource-1000-2000", Utility.intervalKeyToMongoKey(struct));
     }
 
     @Test

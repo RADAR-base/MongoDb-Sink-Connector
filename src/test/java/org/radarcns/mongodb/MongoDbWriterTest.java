@@ -45,30 +45,36 @@ import static org.mockito.Mockito.when;
 public class MongoDbWriterTest {
     @Test
     public void run() throws Exception {
-        BlockingQueue<SinkRecord> buffer = new LinkedBlockingQueue<>();
-        Timer timer = mock(Timer.class);
-        RecordConverter converter = new RecordConverter() {
-            @Override
-            public Collection<String> supportedSchemaNames() {
-                return Arrays.asList("string", "int32-int");
-            }
-            @Override
-            public Document convert(SinkRecord record) throws DataException {
+        MongoWrapper wrapper = mock(MongoWrapper.class);
+        when(wrapper.checkConnection()).thenReturn(true);
 
-                return new Document("mykey", new BsonString(record.value().toString()));
-            }
-        };
+        BlockingQueue<SinkRecord> buffer = new LinkedBlockingQueue<>();
+
         RecordConverterFactory factory = new RecordConverterFactory() {
+            private final RecordConverter converter = new RecordConverter() {
+                @Override
+                public Collection<String> supportedSchemaNames() {
+                    return Arrays.asList("string", "int32-int");
+                }
+
+                @Override
+                public Document convert(SinkRecord record) throws DataException {
+
+                    return new Document("mykey", new BsonString(record.value().toString()));
+                }
+            };
             @Override
             protected List<RecordConverter> genericConverters() {
                 return Collections.singletonList(converter);
             }
         };
-        MongoWrapper wrapper = mock(MongoWrapper.class);
-        when(wrapper.checkConnection()).thenReturn(true);
+
+        Timer timer = mock(Timer.class);
+        verify(timer).schedule(any(Monitor.class), eq(0L), eq(30_000L));
 
         MongoDbWriter writer = new MongoDbWriter(wrapper, buffer, factory, timer);
-        verify(timer).schedule(any(Monitor.class), eq(0L), eq(30_000L));
+        Thread writerThread = new Thread(writer, "MongoDB-writer");
+        writerThread.start();
 
         buffer.add(new SinkRecord("mytopic", 5,
                 SchemaBuilder.int32().build(), 1,
@@ -77,8 +83,6 @@ public class MongoDbWriterTest {
                 null, null,
                 SchemaBuilder.string().build(), "hi", 1001));
 
-        Thread writerThread = new Thread(writer, "MongoDB-writer");
-        writerThread.start();
         writer.flush(Collections.singletonMap(
                 new TopicPartition("mytopic", 5), new OffsetAndMetadata(1000)));
 

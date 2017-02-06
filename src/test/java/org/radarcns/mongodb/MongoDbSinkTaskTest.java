@@ -70,5 +70,5 @@ public class MongoDbSinkTaskTest {
             timesCalled++;
             return writer;
         }
-    };
+    }
 }
