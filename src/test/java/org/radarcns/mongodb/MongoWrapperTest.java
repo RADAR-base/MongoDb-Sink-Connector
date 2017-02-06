@@ -75,6 +75,38 @@ public class MongoWrapperTest {
     }
 
     @Test
+    public void checkConnectionWithEmptyCredentials() throws Exception {
+        Map<String, Object> configMap = new HashMap<>();
+        configMap.put(MONGO_USERNAME, "");
+        configMap.put(MONGO_PASSWORD, "");
+        configMap.put(MONGO_PORT, MONGO_PORT_DEFAULT);
+        configMap.put(MONGO_HOST, "localhost");
+        configMap.put(MONGO_DATABASE, "mydb");
+        configMap.put(COLLECTION_FORMAT, "{$topic}");
+
+        Field credentialsField = MongoWrapper.class.getDeclaredField("credentials");
+        credentialsField.setAccessible(true);
+        MongoClientOptions timeout = MongoClientOptions.builder()
+                .connectTimeout(1)
+                .socketTimeout(1)
+                .serverSelectionTimeout(1)
+                .build();
+        MongoWrapper wrapper = new MongoWrapper(new AbstractConfig(configMap), timeout);
+
+        assertThat((List<?>)credentialsField.get(wrapper), empty());
+        assertFalse(wrapper.checkConnection());
+
+        try {
+            wrapper.store("mytopic", new Document());
+            assertTrue(false);
+        } catch (MongoException | NullPointerException ex) {
+            assertTrue(true);
+        }
+
+        wrapper.close();
+    }
+
+    @Test
     public void checkConnectionWithCredentials() throws Exception {
         Map<String, Object> configMap = new HashMap<>();
         configMap.put(MONGO_USERNAME, "myuser");

@@ -158,23 +158,46 @@ public class MongoDbWriter implements Closeable, Runnable {
      */
     public synchronized void flush(Map<TopicPartition, OffsetAndMetadata> offsets)
             throws ConnectException {
+
+        log.debug("Init flush-writer");
+        long startTime = System.nanoTime();
+
         if (exception != null) {
             log.error("MongoDB writer is on illegal state");
             throw new ConnectException("MongoDB writer is on illegal state", exception);
+        }
+
+        log.debug("Kafka Offsets: {}", offsets.size());
+        for (TopicPartition tPart : offsets.keySet()) {
+            log.debug("{} - {}", tPart.toString(), offsets.get(tPart).toString());
+        }
+        log.debug("LatestOffset: {}", latestOffsets.size());
+        for (TopicPartition tPart : latestOffsets.keySet()) {
+            log.debug("{} - {}", tPart.toString(), latestOffsets.get(tPart).toString());
         }
 
         try {
             List<TopicPartition> waiting = new ArrayList<>(offsets.keySet());
             while (true) {
                 Iterator<TopicPartition> waitingIterator = waiting.iterator();
+
                 while (waitingIterator.hasNext()) {
                     TopicPartition topicPartition = waitingIterator.next();
                     Long offset = latestOffsets.get(topicPartition);
-                    if (offset != null && offset >= offsets.get(topicPartition).offset()) {
+
+                    if (offset != null && (offset + 1) >= offsets.get(topicPartition).offset()) {
+                        waitingIterator.remove();
+                    }
+                    else if(offset == null && offsets.get(topicPartition).offset() == 0){
                         waitingIterator.remove();
                     }
                 }
+
                 if (waiting.isEmpty()) {
+                    long endTime = System.nanoTime();
+                    log.info("[FLUSH-WRITER] Time-laps: {}nsec", endTime - startTime);
+                    log.debug("End flush-writer");
+
                     return;
                 }
 
