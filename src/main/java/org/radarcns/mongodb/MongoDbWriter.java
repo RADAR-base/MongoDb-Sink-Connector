@@ -44,7 +44,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * It keeps track of the latest offsets of records that have been written, so that a flush operation
  * can be done against specific Kafka offsets.
  */
-public class MongoDbWriter extends Thread implements Closeable {
+public class MongoDbWriter implements Closeable, Runnable {
     private static final Logger log = LoggerFactory.getLogger(MongoDbWriter.class);
     private static final int NUM_RETRIES = 3;
 
@@ -69,7 +69,6 @@ public class MongoDbWriter extends Thread implements Closeable {
     public MongoDbWriter(MongoWrapper mongoHelper, BlockingQueue<SinkRecord> buffer,
                          RecordConverterFactory converterFactory, Timer timer)
             throws ConnectException {
-        super("MongoDB-writer");
         this.buffer = buffer;
         this.monitor = new Monitor(log, "have been written in MongoDB", this.buffer);
         timer.schedule(monitor, 0, 30_000);
@@ -197,6 +196,5 @@ public class MongoDbWriter extends Thread implements Closeable {
     public void close() {
         log.debug("Closing MongoDB writer");
         stopping.set(true);
-        interrupt();
     }
 }

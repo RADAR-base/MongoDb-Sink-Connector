@@ -77,7 +77,8 @@ public class MongoDbWriterTest {
                 null, null,
                 SchemaBuilder.string().build(), "hi", 1001));
 
-        writer.start();
+        Thread writerThread = new Thread(writer, "MongoDB-writer");
+        writerThread.start();
         writer.flush(Collections.singletonMap(
                 new TopicPartition("mytopic", 5), new OffsetAndMetadata(1000)));
 
@@ -85,7 +86,8 @@ public class MongoDbWriterTest {
         verify(wrapper).store("mytopic", new Document("mykey", new BsonString("hi")));
 
         writer.close();
-        writer.join();
+        writerThread.interrupt();
+        writerThread.join();
 
         verify(wrapper).close();
     }

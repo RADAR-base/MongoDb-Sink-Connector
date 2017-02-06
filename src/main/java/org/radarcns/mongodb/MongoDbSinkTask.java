@@ -50,6 +50,7 @@ public class MongoDbSinkTask extends SinkTask {
 
     private BlockingQueue<SinkRecord> buffer;
     private MongoDbWriter writer;
+    private Thread writerThread;
     private Timer timer;
 
     public MongoDbSinkTask() {
@@ -78,10 +79,18 @@ public class MongoDbSinkTask extends SinkTask {
         } catch (InstantiationException | IllegalAccessException | ClassCastException e) {
             throw new IllegalWorkerStateException("Got illegal RecordConverterClass", e);
         }
+        writer = createMongoDbWriter(config, buffer, converterFactory, timer);
+        writerThread = new Thread(writer, "MongDB-writer");
+        writerThread.start();
+    }
+
+    // public helper function for easier mocking
+    public MongoDbWriter createMongoDbWriter(AbstractConfig config,
+                                      BlockingQueue<SinkRecord> buffer,
+                                      RecordConverterFactory converterFactory, Timer timer) {
         MongoWrapper mongoHelper = new MongoWrapper(config, null);
 
-        writer = new MongoDbWriter(mongoHelper, buffer, converterFactory, timer);
-        writer.start();
+        return new MongoDbWriter(mongoHelper, buffer, converterFactory, timer);
     }
 
     @Override
@@ -100,6 +109,12 @@ public class MongoDbSinkTask extends SinkTask {
     @Override
     public void stop() {
         writer.close();
-        timer.purge();
+        writerThread.interrupt();
+        timer.cancel();
+        try {
+            writerThread.join(30_000L);
+        } catch (InterruptedException ex) {
+            log.info("Failed to wait for writer thread to finish.", ex);
+        }
     }
 }
