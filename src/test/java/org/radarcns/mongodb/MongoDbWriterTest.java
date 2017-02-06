@@ -19,9 +19,12 @@ package org.radarcns.mongodb;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.mongodb.client.MongoCursor;
+import com.mongodb.client.MongoIterable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -33,6 +36,9 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.sink.SinkRecord;
+import org.bson.BsonDocument;
+import org.bson.BsonInt32;
+import org.bson.BsonInt64;
 import org.bson.BsonString;
 import org.bson.Document;
 import org.junit.Test;
@@ -45,6 +51,21 @@ public class MongoDbWriterTest {
     public void run() throws Exception {
         MongoWrapper wrapper = mock(MongoWrapper.class);
         when(wrapper.checkConnection()).thenReturn(true);
+        @SuppressWarnings("unchecked")
+        MongoIterable<Document> iterable = mock(MongoIterable.class);
+        @SuppressWarnings("unchecked")
+        MongoCursor<Document> iterator = mock(MongoCursor.class);
+        when(iterable.iterator()).thenReturn(iterator);
+        when(iterator.hasNext()).thenReturn(true, false);
+        BsonDocument id = new BsonDocument();
+        id.put("topic", new BsonString("mytopic"));
+        id.put("partition", new BsonInt32(5));
+        Document partDoc = new Document();
+        partDoc.put("_id", id);
+        partDoc.put("offset", new BsonInt64(999L));
+
+        when(iterator.next()).thenReturn(partDoc);
+        when(wrapper.getDocuments("OFFSETS")).thenReturn(iterable);
 
         BlockingQueue<SinkRecord> buffer = new LinkedBlockingQueue<>();
 
@@ -74,6 +95,9 @@ public class MongoDbWriterTest {
         writerThread.start();
 
         buffer.add(new SinkRecord("mytopic", 5,
+                null, null,
+                SchemaBuilder.string().build(), "ignored", 999));
+        buffer.add(new SinkRecord("mytopic", 5,
                 SchemaBuilder.int32().build(), 1,
                 SchemaBuilder.int32().name("int").build(), 2, 1000));
         buffer.add(new SinkRecord("mytopic", 5,
@@ -83,8 +107,11 @@ public class MongoDbWriterTest {
         writer.flush(Collections.singletonMap(
                 new TopicPartition("mytopic", 5), 1001L));
 
+        verify(wrapper, times(3)).store(any(), any());
         verify(wrapper).store("mytopic", new Document("mykey", new BsonString("2")));
         verify(wrapper).store("mytopic", new Document("mykey", new BsonString("hi")));
+        partDoc.put("offset", new BsonInt64(1001L));
+        verify(wrapper).store("OFFSETS", partDoc);
 
         writer.close();
         writerThread.interrupt();

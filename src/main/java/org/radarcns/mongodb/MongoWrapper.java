@@ -16,25 +16,6 @@
 
 package org.radarcns.mongodb;
 
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientOptions;
-import com.mongodb.MongoCredential;
-import com.mongodb.MongoException;
-import com.mongodb.ServerAddress;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.UpdateOptions;
-
-import org.apache.kafka.common.config.AbstractConfig;
-import org.apache.kafka.connect.errors.ConnectException;
-import org.bson.Document;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.Closeable;
-import java.util.Collections;
-import java.util.List;
-
 import static com.mongodb.client.model.Filters.eq;
 import static org.radarcns.mongodb.MongoDbSinkConnector.COLLECTION_FORMAT;
 import static org.radarcns.mongodb.MongoDbSinkConnector.MONGO_DATABASE;
@@ -43,15 +24,33 @@ import static org.radarcns.mongodb.MongoDbSinkConnector.MONGO_PASSWORD;
 import static org.radarcns.mongodb.MongoDbSinkConnector.MONGO_PORT;
 import static org.radarcns.mongodb.MongoDbSinkConnector.MONGO_USERNAME;
 
+import com.mongodb.MongoClient;
+import com.mongodb.MongoClientOptions;
+import com.mongodb.MongoCredential;
+import com.mongodb.MongoException;
+import com.mongodb.ServerAddress;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.MongoIterable;
+import com.mongodb.client.model.UpdateOptions;
+import java.io.Closeable;
+import java.util.Collections;
+import java.util.List;
+import org.apache.kafka.common.config.AbstractConfig;
+import org.apache.kafka.connect.errors.ConnectException;
+import org.bson.Document;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Wrapper around {@link MongoClient}.
  */
 public class MongoWrapper implements Closeable {
     private final Logger log = LoggerFactory.getLogger(MongoWrapper.class);
-    private final String dbName;
     private final MongoClient mongoClient;
     private final List<MongoCredential> credentials;
     private final String collectionFormat;
+    private final MongoDatabase database;
 
     /**
      * Create a new {@link MongoClient}.
@@ -61,12 +60,13 @@ public class MongoWrapper implements Closeable {
      */
     public MongoWrapper(AbstractConfig config, MongoClientOptions options) {
         collectionFormat = config.getString(COLLECTION_FORMAT);
-        dbName = config.getString(MONGO_DATABASE);
-        credentials = createCredentials(config);
+        String dbName = config.getString(MONGO_DATABASE);
+        credentials = createCredentials(config, dbName);
         mongoClient = createClient(config, options);
+        database = mongoClient.getDatabase(dbName);
     }
 
-    private List<MongoCredential> createCredentials(AbstractConfig config) {
+    private List<MongoCredential> createCredentials(AbstractConfig config, String dbName) {
         String userName = config.getString(MONGO_USERNAME);
         String password = config.getString(MONGO_PASSWORD);
         if (isValid(userName) && isValid(password)) {
@@ -103,7 +103,7 @@ public class MongoWrapper implements Closeable {
     /** Whether the database can be pinged using the current MongoDB client and credentials. */
     public boolean checkConnection() {
         try {
-            mongoClient.getDatabase(dbName).runCommand(new Document("ping", 1));
+            database.runCommand(new Document("ping", 1));
             return true;
         } catch (Exception ex) {
             log.error("Error during MongoDB connection test", ex);
@@ -125,11 +125,20 @@ public class MongoWrapper implements Closeable {
      * @throws MongoException if the document could not be stored
      */
     public void store(String topic, Document doc) throws MongoException {
-        MongoDatabase database = mongoClient.getDatabase(dbName);
         String collectionName = collectionFormat.replace("{$topic}", topic);
         MongoCollection<Document> collection = database.getCollection(collectionName);
 
         UpdateOptions options = new UpdateOptions().upsert(true);
         collection.replaceOne(eq("_id", doc.get("_id")), doc, options);
+    }
+
+    /**
+     * Retrieves
+     */
+    public MongoIterable<Document> getDocuments(String topic) {
+        String collectionName = collectionFormat.replace("{$topic}", topic);
+        MongoCollection<Document> collection = database.getCollection(collectionName);
+
+        return collection.find();
     }
 }

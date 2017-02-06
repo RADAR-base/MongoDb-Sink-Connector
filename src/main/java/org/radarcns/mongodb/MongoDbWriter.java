@@ -16,6 +16,9 @@
 
 package org.radarcns.mongodb;
 
+import com.mongodb.MongoException;
+import com.mongodb.client.MongoCursor;
+import com.mongodb.client.MongoIterable;
 import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,6 +32,11 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.sink.SinkRecord;
+import org.bson.BsonDocument;
+import org.bson.BsonInt32;
+import org.bson.BsonInt64;
+import org.bson.BsonString;
+import org.bson.BsonValue;
 import org.bson.Document;
 import org.radarcns.serialization.RecordConverter;
 import org.radarcns.serialization.RecordConverterFactory;
@@ -85,6 +93,8 @@ public class MongoDbWriter implements Closeable, Runnable {
         this.converterFactory = converterFactory;
 
         exception = null;
+
+        retrieveOffsets();
     }
 
     @Override
@@ -99,8 +109,15 @@ public class MongoDbWriter implements Closeable, Runnable {
                 log.debug("Interrupted while polling buffer", ex);
                 continue;
             }
+            TopicPartition partition = new TopicPartition(record.topic(), record.kafkaPartition());
+            // Do not write same record twice
+            Long offsetWritten = latestOffsets.get(partition);
+            if (offsetWritten != null && offsetWritten >= record.kafkaOffset()) {
+                continue;
+            }
+
             store(record, 0);
-            processedRecord(record);
+            processedRecord(record, partition);
         }
 
         mongoHelper.close();
@@ -128,8 +145,7 @@ public class MongoDbWriter implements Closeable, Runnable {
         }
     }
 
-    private synchronized void processedRecord(SinkRecord record) {
-        TopicPartition topicPartition = new TopicPartition(record.topic(), record.kafkaPartition());
+    private synchronized void processedRecord(SinkRecord record, TopicPartition topicPartition) {
         latestOffsets.put(topicPartition,record.kafkaOffset());
         notify();
     }
@@ -194,7 +210,7 @@ public class MongoDbWriter implements Closeable, Runnable {
                 log.info("[FLUSH-WRITER] Time-elapsed: {} s", timer.duration());
                 log.debug("End flush-writer");
 
-                return;
+                break;
             }
 
             try {
@@ -202,6 +218,38 @@ public class MongoDbWriter implements Closeable, Runnable {
                 wait();
             } catch (InterruptedException ex) {
                 throw new ConnectException("MongoDB writer was interrupted", ex);
+            }
+        }
+        storeOffsets();
+    }
+
+    private void storeOffsets() {
+        try {
+            for (Map.Entry<TopicPartition, Long> offset : latestOffsets.entrySet()) {
+                BsonDocument id = new BsonDocument();
+                id.put("topic", new BsonString(offset.getKey().topic()));
+                id.put("partition", new BsonInt32(offset.getKey().partition()));
+                Document doc = new Document();
+                doc.put("_id", id);
+                doc.put("offset", new BsonInt64(offset.getValue()));
+                mongoHelper.store("OFFSETS", doc);
+            }
+        } catch (MongoException ex) {
+            log.warn("Failed to store offsets to MongoDB", ex);
+        }
+    }
+
+    private void retrieveOffsets() {
+        MongoIterable<Document> documentIterable = mongoHelper.getDocuments("OFFSETS");
+        try (MongoCursor<Document> documents = documentIterable.iterator()) {
+            while (documents.hasNext()) {
+                Document doc = documents.next();
+                BsonDocument id = (BsonDocument) doc.get("_id");
+                String topic = id.get("topic").asString().getValue();
+                int partition = id.get("partition").asInt32().getValue();
+                long offset = ((BsonValue) doc.get("offset")).asInt64().getValue();
+
+                latestOffsets.put(new TopicPartition(topic, partition), offset);
             }
         }
     }
