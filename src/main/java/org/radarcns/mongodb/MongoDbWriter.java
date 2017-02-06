@@ -186,10 +186,9 @@ public class MongoDbWriter implements Closeable, Runnable {
                 while (waitingIterator.hasNext()) {
                     TopicPartition topicPartition = waitingIterator.next();
                     Long offset = latestOffsets.get(topicPartition);
+                    offset = offset == null ? new Long(0) : offset + 1;
 
-                    if (offset != null && (offset + 1) >= offsets.get(topicPartition).offset()) {
-                        waitingIterator.remove();
-                    } else if (offset == null && offsets.get(topicPartition).offset() == 0) {
+                    if (offset >= offsets.get(topicPartition).offset()) {
                         waitingIterator.remove();
                     }
                 }
