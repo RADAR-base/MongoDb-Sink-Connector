@@ -26,13 +26,13 @@ import java.util.Map;
 /**
  * Generically convert SinkRecords to BSON Documents.
  *
- * The key of a {@link SinkRecord} is converted to String and becomes the Document _id. The value
+ * <p>The key of a {@link SinkRecord} is converted to String and becomes the Document _id. The value
  * is converted to BsonValue. If it is a primitive value, it is assigned to the "value" property.
  * If it is a Map or Struct, the values are directly entered in the document with the same
  * key-values as the originating Struct or Map.
  */
 public class GenericRecordConverter implements RecordConverter {
-    final protected static char[] hexArray = "0123456789ABCDEF".toCharArray();
+    protected static final char[] hexArray = "0123456789ABCDEF".toCharArray();
 
     @Override
     public Collection<String> supportedSchemaNames() {
@@ -62,7 +62,7 @@ public class GenericRecordConverter implements RecordConverter {
         return document;
     }
 
-    /** Convert given record value to BSON */
+    /** Convert given record value to BSON. */
     private BsonValue toBson(Object record) throws DataException {
         if (record == null) {
             return new BsonNull();
@@ -131,20 +131,20 @@ public class GenericRecordConverter implements RecordConverter {
     /**
      * Try to convert to BsonDateTime.
      *
-     * @param o raw value
+     * @param obj raw value
      * @return BsonDateTime, or null if unsuccessful
      */
-    private static BsonDateTime toDateTime(Object o) {
-        if (o instanceof Long) {
-            return new BsonDateTime((Long)o);
-        } else if (o instanceof Double) {
-            return new BsonDateTime((long)(1000d * (Double) o));
+    private static BsonDateTime toDateTime(Object obj) {
+        if (obj instanceof Long) {
+            return new BsonDateTime((Long)obj);
+        } else if (obj instanceof Double) {
+            return new BsonDateTime((long)(1000d * (Double) obj));
         } else {
             return null;
         }
     }
 
-    /** Convert given part of a record to String */
+    /** Convert given part of a record to String. */
     private String toString(Object record) throws DataException {
         if (record == null) {
             return "null";
@@ -183,9 +183,9 @@ public class GenericRecordConverter implements RecordConverter {
             hexChars[0] = '0';
             hexChars[1] = 'x';
             for (int j = 0; j < bytes.length; j++) {
-                int v = bytes[j] & 0xFF;
-                hexChars[j * 2 + 2] = hexArray[v >>> 4];
-                hexChars[j * 2 + 3] = hexArray[v & 0x0F];
+                int pair = bytes[j] & 0xFF;
+                hexChars[j * 2 + 2] = hexArray[pair >>> 4];
+                hexChars[j * 2 + 3] = hexArray[pair & 0x0F];
             }
             return new String(hexChars);
         } else {

@@ -49,16 +49,15 @@ public class Monitor extends TimerTask {
     /**
      * Logs the current count and, if applicable buffer size.
      *
-     * This resets the current count to 0.
+     * <p>This resets the current count to 0.
      */
     @Override
     public void run() {
-        if(buffer == null) {
+        if (buffer == null) {
             log.info("{} {}", count.getAndSet(0), message);
-        }
-        else {
-            log.info("{} {} {} records need to be processed.", count.getAndSet(0), message,
-                    buffer.size());
+        } else {
+            log.info("{} {} {} records need to be processed.",
+                    count.getAndSet(0), message, buffer.size());
         }
     }
 

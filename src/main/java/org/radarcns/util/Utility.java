@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 public class Utility {
-    public static String convertConfigToString(Map<String, String> map){
+    public static String convertConfigToString(Map<String, String> map) {
         String ret = "User configuration are: ";
         for (Map.Entry<String, String> entry : map.entrySet()) {
             ret += "\n\t" + entry.getKey() + ": " + entry.getValue();
@@ -33,7 +33,7 @@ public class Utility {
         return ret;
     }
 
-    public static List<Document> extractQuartile(List<Double> component){
+    public static List<Document> extractQuartile(List<Double> component) {
         return Arrays.asList(
                 new Document("25", new BsonDouble(component.get(0))),
                 new Document("50", new BsonDouble(component.get(1))),

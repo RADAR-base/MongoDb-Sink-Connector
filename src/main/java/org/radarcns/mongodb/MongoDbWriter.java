@@ -42,8 +42,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * A thread that reads Kafka SinkRecords from a buffer and writes them to a MongoDB database.
  *
- * It keeps track of the latest offsets of records that have been written, so that a flush operation
- * can be done against specific Kafka offsets.
+ * <p>It keeps track of the latest offsets of records that have been written, so that a flush
+ * operation can be done against specific Kafka offsets.
  */
 public class MongoDbWriter implements Closeable, Runnable {
     private static final Logger log = LoggerFactory.getLogger(MongoDbWriter.class);
@@ -97,8 +97,8 @@ public class MongoDbWriter implements Closeable, Runnable {
             SinkRecord record;
             try {
                 record = buffer.take();
-            } catch (InterruptedException e) {
-                log.debug("Interrupted while polling buffer", e);
+            } catch (InterruptedException ex) {
+                log.debug("Interrupted while polling buffer", ex);
                 continue;
             }
             store(record, 0);
@@ -115,17 +115,17 @@ public class MongoDbWriter implements Closeable, Runnable {
             Document doc = getDoc(record);
             mongoHelper.store(record.topic(), doc);
             monitor.increment();
-        } catch (DataException e) {
+        } catch (DataException ex) {
             log.error("Unsupported MongoDB data type in data from Kafka. Skipping record {}",
-                    record, e);
-            setException(e);
-        } catch (Exception e){
+                    record, ex);
+            setException(ex);
+        } catch (Exception ex) {
             if (tries + 1 < NUM_RETRIES) {
-                log.error("Exception while trying to add record {}, retrying", record, e);
+                log.error("Exception while trying to add record {}, retrying", record, ex);
                 store(record, tries + 1);
             } else {
-                setException(e);
-                log.error("Exception while trying to add record {}, skipping", record, e);
+                setException(ex);
+                log.error("Exception while trying to add record {}, skipping", record, ex);
             }
         }
     }
@@ -145,9 +145,9 @@ public class MongoDbWriter implements Closeable, Runnable {
 
         try {
             return converter.convert(record);
-        } catch (Exception e) {
-            log.error("Error while converting {}.", record, e);
-            throw new DataException("Record cannot be converted to a Document", e);
+        } catch (Exception ex) {
+            log.error("Error while converting {}.", record, ex);
+            throw new DataException("Record cannot be converted to a Document", ex);
         }
     }
 
@@ -167,13 +167,15 @@ public class MongoDbWriter implements Closeable, Runnable {
             throw new ConnectException("MongoDB writer is in an illegal state", exception);
         }
 
-        log.debug("Kafka Offsets: {}", offsets.size());
-        for (TopicPartition tPart : offsets.keySet()) {
-            log.debug("{} - {}", tPart.toString(), offsets.get(tPart).toString());
-        }
-        log.debug("LatestOffset: {}", latestOffsets.size());
-        for (TopicPartition tPart : latestOffsets.keySet()) {
-            log.debug("{} - {}", tPart.toString(), latestOffsets.get(tPart).toString());
+        if (log.isDebugEnabled()) {
+            log.debug("Kafka Offsets: {}", offsets.size());
+            for (TopicPartition partition : offsets.keySet()) {
+                log.debug("{} - {}", partition, offsets.get(partition));
+            }
+            log.debug("LatestOffset: {}", latestOffsets.size());
+            for (TopicPartition partition : latestOffsets.keySet()) {
+                log.debug("{} - {}", partition, latestOffsets.get(partition));
+            }
         }
 
         try {
@@ -187,8 +189,7 @@ public class MongoDbWriter implements Closeable, Runnable {
 
                     if (offset != null && (offset + 1) >= offsets.get(topicPartition).offset()) {
                         waitingIterator.remove();
-                    }
-                    else if(offset == null && offsets.get(topicPartition).offset() == 0){
+                    } else if (offset == null && offsets.get(topicPartition).offset() == 0) {
                         waitingIterator.remove();
                     }
                 }
@@ -211,7 +212,7 @@ public class MongoDbWriter implements Closeable, Runnable {
     /**
      * Closes the writer.
      *
-     * This will eventually close the thread but it will not wait for it. It will also not flush
+     * <p>This will eventually close the thread but it will not wait for it. It will also not flush
      * the buffer.
      */
     @Override

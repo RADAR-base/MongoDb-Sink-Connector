@@ -10,7 +10,7 @@ public class DurationTimer {
         reset();
     }
 
-    /** Reset the timer to zero */
+    /** Reset the timer to zero. */
     public final void reset() {
         nanoTime = System.nanoTime();
     }

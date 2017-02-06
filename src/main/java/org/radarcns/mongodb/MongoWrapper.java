@@ -93,20 +93,20 @@ public class MongoWrapper implements Closeable {
                 actualOptions = new MongoClientOptions.Builder().build();
             }
             return new MongoClient(new ServerAddress(host, port), credentials, actualOptions);
-        } catch (com.mongodb.MongoSocketOpenException e){
+        } catch (MongoException ex) {
             log.error("Failed to create MongoDB client to {}:{} with credentials {}", host, port,
-                    credentials, e);
-            throw new ConnectException("MongoDb client cannot be created.", e);
+                    credentials, ex);
+            throw new ConnectException("MongoDb client cannot be created.", ex);
         }
     }
 
-    /** Whether the database can be pinged using the current MongoDB client and credentials */
+    /** Whether the database can be pinged using the current MongoDB client and credentials. */
     public boolean checkConnection() {
         try {
             mongoClient.getDatabase(dbName).runCommand(new Document("ping", 1));
             return true;
-        } catch (Exception e) {
-            log.error("Error during MongoDB connection test", e);
+        } catch (Exception ex) {
+            log.error("Error during MongoDB connection test", ex);
             return false;
         }
     }
@@ -118,7 +118,8 @@ public class MongoWrapper implements Closeable {
     }
 
     /**
-     * Store a document in MongoDB
+     * Store a document in MongoDB.
+     *
      * @param topic Kafka topic that the document belongs to
      * @param doc MongoDB document
      * @throws MongoException if the document could not be stored
@@ -128,6 +129,7 @@ public class MongoWrapper implements Closeable {
         String collectionName = collectionFormat.replace("{$topic}", topic);
         MongoCollection<Document> collection = database.getCollection(collectionName);
 
-        collection.replaceOne(eq("_id", doc.get("_id")), doc, (new UpdateOptions()).upsert(true));
+        UpdateOptions options = new UpdateOptions().upsert(true);
+        collection.replaceOne(eq("_id", doc.get("_id")), doc, options);
     }
 }
