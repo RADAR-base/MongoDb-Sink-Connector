@@ -16,15 +16,14 @@
 
 package org.radarcns.serialization;
 
+import java.util.Collection;
+import java.util.Collections;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.bson.BsonDateTime;
 import org.bson.BsonDouble;
 import org.bson.Document;
 import org.radarcns.util.Utility;
-
-import java.util.Collection;
-import java.util.Collections;
 
 public class DoubleAggregatedRecordConverter implements RecordConverter {
     @Override

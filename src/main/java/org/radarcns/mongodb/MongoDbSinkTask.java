@@ -16,7 +16,15 @@
 
 package org.radarcns.mongodb;
 
+import static org.radarcns.mongodb.MongoDbSinkConnector.BUFFER_CAPACITY;
+import static org.radarcns.mongodb.MongoDbSinkConnector.RECORD_CONVERTER;
+
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.Timer;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.AbstractConfig;
@@ -28,15 +36,6 @@ import org.radarcns.util.DurationTimer;
 import org.radarcns.util.Monitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Collection;
-import java.util.Map;
-import java.util.Timer;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-
-import static org.radarcns.mongodb.MongoDbSinkConnector.BUFFER_CAPACITY;
-import static org.radarcns.mongodb.MongoDbSinkConnector.RECORD_CONVERTER;
 
 /**
  * Task to handle data coming from Kafka and send it to MongoDB.

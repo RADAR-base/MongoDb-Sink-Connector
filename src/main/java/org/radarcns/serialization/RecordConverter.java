@@ -16,11 +16,10 @@
 
 package org.radarcns.serialization;
 
+import java.util.Collection;
 import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.bson.Document;
-
-import java.util.Collection;
 
 /**
  * Converts Kafka records to MongoDB documents.

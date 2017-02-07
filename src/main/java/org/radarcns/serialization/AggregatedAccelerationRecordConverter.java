@@ -16,15 +16,14 @@
 
 package org.radarcns.serialization;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.bson.BsonDateTime;
 import org.bson.Document;
 import org.radarcns.util.Utility;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 
 public class AggregatedAccelerationRecordConverter implements RecordConverter {
     @Override

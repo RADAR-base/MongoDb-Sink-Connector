@@ -36,10 +36,6 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.sink.SinkRecord;
-import org.bson.BsonDocument;
-import org.bson.BsonInt32;
-import org.bson.BsonInt64;
-import org.bson.BsonString;
 import org.bson.Document;
 import org.junit.Test;
 import org.radarcns.serialization.RecordConverter;
@@ -47,6 +43,7 @@ import org.radarcns.serialization.RecordConverterFactory;
 import org.radarcns.util.Monitor;
 
 public class MongoDbWriterTest {
+
     @Test
     public void run() throws Exception {
         MongoWrapper wrapper = mock(MongoWrapper.class);
@@ -57,12 +54,12 @@ public class MongoDbWriterTest {
         MongoCursor<Document> iterator = mock(MongoCursor.class);
         when(iterable.iterator()).thenReturn(iterator);
         when(iterator.hasNext()).thenReturn(true, false);
-        BsonDocument id = new BsonDocument();
-        id.put("topic", new BsonString("mytopic"));
-        id.put("partition", new BsonInt32(5));
+        Document id = new Document();
+        id.put("topic", "mytopic");
+        id.put("partition", new Integer(5).intValue());
         Document partDoc = new Document();
         partDoc.put("_id", id);
-        partDoc.put("offset", new BsonInt64(999L));
+        partDoc.put("offset", new Long(999L).longValue());
 
         when(iterator.next()).thenReturn(partDoc);
         when(wrapper.getDocuments("OFFSETS")).thenReturn(iterable);
@@ -80,7 +77,7 @@ public class MongoDbWriterTest {
 
                     @Override
                     public Document convert(SinkRecord record) throws DataException {
-                        return new Document("mykey", new BsonString(record.value().toString()));
+                        return new Document("mykey", record.value().toString());
                     }
                 });
             }
@@ -108,9 +105,9 @@ public class MongoDbWriterTest {
                 new TopicPartition("mytopic", 5), 1001L));
 
         verify(wrapper, times(3)).store(any(), any());
-        verify(wrapper).store("mytopic", new Document("mykey", new BsonString("2")));
-        verify(wrapper).store("mytopic", new Document("mykey", new BsonString("hi")));
-        partDoc.put("offset", new BsonInt64(1001L));
+        verify(wrapper).store("mytopic", new Document("mykey", "2"));
+        verify(wrapper).store("mytopic", new Document("mykey", "hi"));
+        partDoc.put("offset", 1001L);
         verify(wrapper).store("OFFSETS", partDoc);
 
         writer.close();

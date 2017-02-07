@@ -16,13 +16,12 @@
 
 package org.radarcns.util;
 
-import org.apache.kafka.connect.data.Struct;
-import org.bson.BsonDouble;
-import org.bson.Document;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import org.apache.kafka.connect.data.Struct;
+import org.bson.BsonDouble;
+import org.bson.Document;
 
 public class Utility {
     public static String convertConfigToString(Map<String, String> map) {

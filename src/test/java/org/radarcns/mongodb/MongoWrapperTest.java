@@ -16,24 +16,29 @@
 
 package org.radarcns.mongodb;
 
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasSize;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.radarcns.mongodb.MongoDbSinkConnector.COLLECTION_FORMAT;
+import static org.radarcns.mongodb.MongoDbSinkConnector.MONGO_DATABASE;
+import static org.radarcns.mongodb.MongoDbSinkConnector.MONGO_HOST;
+import static org.radarcns.mongodb.MongoDbSinkConnector.MONGO_PASSWORD;
+import static org.radarcns.mongodb.MongoDbSinkConnector.MONGO_PORT;
+import static org.radarcns.mongodb.MongoDbSinkConnector.MONGO_PORT_DEFAULT;
+import static org.radarcns.mongodb.MongoDbSinkConnector.MONGO_USERNAME;
+
 import com.mongodb.MongoClientOptions;
 import com.mongodb.MongoException;
+import java.lang.reflect.Field;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.bson.Document;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-
-import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.hasSize;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.radarcns.mongodb.MongoDbSinkConnector.*;
 
 public class MongoWrapperTest {
     @Rule

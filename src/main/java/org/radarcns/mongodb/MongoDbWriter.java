@@ -32,11 +32,6 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.sink.SinkRecord;
-import org.bson.BsonDocument;
-import org.bson.BsonInt32;
-import org.bson.BsonInt64;
-import org.bson.BsonString;
-import org.bson.BsonValue;
 import org.bson.Document;
 import org.radarcns.serialization.RecordConverter;
 import org.radarcns.serialization.RecordConverterFactory;
@@ -226,12 +221,12 @@ public class MongoDbWriter implements Closeable, Runnable {
     private void storeOffsets() {
         try {
             for (Map.Entry<TopicPartition, Long> offset : latestOffsets.entrySet()) {
-                BsonDocument id = new BsonDocument();
-                id.put("topic", new BsonString(offset.getKey().topic()));
-                id.put("partition", new BsonInt32(offset.getKey().partition()));
+                Document id = new Document();
+                id.put("topic", offset.getKey().topic());
+                id.put("partition", offset.getKey().partition());
                 Document doc = new Document();
                 doc.put("_id", id);
-                doc.put("offset", new BsonInt64(offset.getValue()));
+                doc.put("offset", offset.getValue());
                 mongoHelper.store("OFFSETS", doc);
             }
         } catch (MongoException ex) {
@@ -244,10 +239,10 @@ public class MongoDbWriter implements Closeable, Runnable {
         try (MongoCursor<Document> documents = documentIterable.iterator()) {
             while (documents.hasNext()) {
                 Document doc = documents.next();
-                BsonDocument id = (BsonDocument) doc.get("_id");
-                String topic = id.get("topic").asString().getValue();
-                int partition = id.get("partition").asInt32().getValue();
-                long offset = ((BsonValue) doc.get("offset")).asInt64().getValue();
+                Document id = (Document) doc.get("_id");
+                String topic = id.getString("topic");
+                int partition = id.getInteger("partition").intValue();
+                long offset = doc.getLong("offset").longValue();
 
                 latestOffsets.put(new TopicPartition(topic, partition), offset);
             }

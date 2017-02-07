@@ -1,20 +1,26 @@
 package org.radarcns.mongodb;
 
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.radarcns.mongodb.MongoDbSinkConnector.BUFFER_CAPACITY;
+import static org.radarcns.mongodb.MongoDbSinkConnector.MONGO_DATABASE;
+import static org.radarcns.mongodb.MongoDbSinkConnector.MONGO_HOST;
+import static org.radarcns.mongodb.MongoDbSinkConnector.RECORD_CONVERTER;
+import static org.radarcns.mongodb.MongoDbSinkConnector.TOPICS_CONFIG;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.BlockingQueue;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.radarcns.serialization.RecordConverterFactory;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.BlockingQueue;
-
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.*;
-import static org.radarcns.mongodb.MongoDbSinkConnector.*;
 
 public class MongoDbSinkTaskTest {
 

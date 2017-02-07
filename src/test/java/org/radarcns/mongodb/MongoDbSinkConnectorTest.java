@@ -16,13 +16,6 @@
 
 package org.radarcns.mongodb;
 
-import org.apache.kafka.common.config.ConfigException;
-import org.junit.Test;
-
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-
 import static org.apache.kafka.connect.sink.SinkConnector.TOPICS_CONFIG;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasSize;
@@ -36,6 +29,12 @@ import static org.radarcns.mongodb.MongoDbSinkConnector.MONGO_HOST;
 import static org.radarcns.mongodb.MongoDbSinkConnector.MONGO_PORT;
 import static org.radarcns.mongodb.MongoDbSinkConnector.MONGO_PORT_DEFAULT;
 import static org.radarcns.mongodb.MongoDbSinkConnector.MONGO_USERNAME;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import org.apache.kafka.common.config.ConfigException;
+import org.junit.Test;
 
 public class MongoDbSinkConnectorTest {
     @Test
