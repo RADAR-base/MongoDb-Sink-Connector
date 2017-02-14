@@ -241,8 +241,8 @@ public class MongoDbWriter implements Closeable, Runnable {
                 Document doc = documents.next();
                 Document id = (Document) doc.get("_id");
                 String topic = id.getString("topic");
-                int partition = id.getInteger("partition").intValue();
-                long offset = doc.getLong("offset").longValue();
+                int partition = id.getInteger("partition");
+                long offset = doc.getLong("offset");
 
                 latestOffsets.put(new TopicPartition(topic, partition), offset);
             }
