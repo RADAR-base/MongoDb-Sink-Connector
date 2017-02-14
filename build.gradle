@@ -13,7 +13,7 @@ targetCompatibility = '1.8'
 sourceCompatibility = '1.8'
 
 ext.slf4jVersion = '1.7.21'
-ext.kafkaVersion = '0.10.1.0'
+ext.kafkaVersion = '0.10.1.1'
 ext.mongodbVersion = '3.3.0'
 
 ext.junitVersion = '4.12'
