@@ -52,8 +52,6 @@ public class RecordConverterFactory {
      */
     protected List<RecordConverter> genericConverters() {
         return Arrays.asList(
-                new AggregatedAccelerationRecordConverter(),
-                new DoubleAggregatedRecordConverter(),
                 new GenericRecordConverter());
     }
 
