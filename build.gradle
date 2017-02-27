@@ -5,6 +5,8 @@ plugins {
     id 'jacoco'
     id 'pmd'
     id 'checkstyle'
+    id "com.jfrog.bintray" version "1.7.3"
+    id 'maven-publish'
 }
 
 version = 'v0.1-alpha.1'
@@ -144,12 +146,12 @@ publishing {
             artifact sourcesJar
             artifact javadocJar
             groupId 'org.radarcns'
-            artifactId 'RADAR-MongoDbConnector'
+            artifactId 'kafka-connect-mongodb-sink'
             version System.getenv('TRAVIS_TAG')
             pom.withXml {
                 def root = asNode()
                 root.appendNode('description', 'The MongoDB sink connector is a tool for scalably and reliably streaming data between Apache Kafka and MongoDB.')
-                root.appendNode('name', 'RADAR-MongoDbConnector')
+                root.appendNode('name', 'kafka-connect-mongodb-sink')
                 root.appendNode('url', 'https://github.com/RADAR-CNS/RADAR-MongoDbConnector.git')
                 root.children().last() + pomConfig
             }
@@ -166,7 +168,7 @@ bintray {
     publications = ['RadarMongoDBPublication']
     pkg {
         repo = 'org.radarcns'
-        name = 'RADAR-MongoDbConnector'
+        name = 'kafka-connect-mongodb-sink'
         userOrg = 'radar-cns'
         licenses = ['Apache-2.0']
         vcsUrl = 'https://github.com/RADAR-CNS/RADAR-MongoDbConnector.git'
