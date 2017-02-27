@@ -7,7 +7,7 @@ plugins {
     id 'checkstyle'
 }
 
-version = '0.1-SNAPSHOT'
+version = 'v0.1-alpha.1'
 
 targetCompatibility = '1.8'
 sourceCompatibility = '1.8'
@@ -53,11 +53,6 @@ dependencies {
     codacy 'com.github.codacy:codacy-coverage-reporter:1.0.10'
 }
 
-idea {
-    module {
-        sourceDirs += file("build/avro")
-    }
-}
 
 jar {
     manifest {
@@ -107,6 +102,80 @@ task sendCoverageToCodacy(type: JavaExec, dependsOn: jacocoTestReport) {
     main = 'com.codacy.CodacyCoverageReporter'
     classpath = configurations.codacy
     args = ['-l', 'Java', '-r', "${buildDir}/reports/jacoco/test/jacocoTestReport.xml"]
+}
+
+def pomConfig = {
+    licenses {
+        license {
+            name "The Apache Software License, Version 2.0"
+            url "http://www.apache.org/licenses/LICENSE-2.0.txt"
+            distribution "RADAR-CNS Distributions"
+        }
+    }
+    developers {
+        developer {
+            id "radar-cns"
+            name "Nivethika"
+            email "nivethika@thehyve.nl"
+        }
+    }
+}
+// custom tasks for creating source/javadoc jars
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.output
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+// add javadoc/source jar tasks as artifacts
+artifacts {
+    archives sourcesJar, javadocJar
+}
+
+
+publishing {
+    publications {
+        RadarMongoDBPublication(MavenPublication) {
+            from components.java
+            artifact sourcesJar
+            artifact javadocJar
+            groupId 'org.radarcns'
+            artifactId 'RADAR-MongoDbConnector'
+            version System.getenv('TRAVIS_TAG')
+            pom.withXml {
+                def root = asNode()
+                root.appendNode('description', 'The MongoDB sink connector is a tool for scalably and reliably streaming data between Apache Kafka and MongoDB.')
+                root.appendNode('name', 'RADAR-MongoDbConnector')
+                root.appendNode('url', 'https://github.com/RADAR-CNS/RADAR-MongoDbConnector.git')
+                root.children().last() + pomConfig
+            }
+        }
+    }
+}
+
+
+
+bintray {
+    user = System.getenv('BINTRAY_USER')? System.getenv('BINTRAY_USER') : project.property('bintrayUser')
+    key = System.getenv('BINTRAY_API_KEY') ? System.getenv('BINTRAY_API_KEY') : project.property('bintrayApiKey')
+    override = false
+    publications = ['RadarMongoDBPublication']
+    pkg {
+        repo = 'org.radarcns'
+        name = 'RADAR-MongoDbConnector'
+        userOrg = 'radar-cns'
+        licenses = ['Apache-2.0']
+        vcsUrl = 'https://github.com/RADAR-CNS/RADAR-MongoDbConnector.git'
+        version {
+            name = System.getenv('TRAVIS_TAG')
+            desc = 'Initial alpha release'
+            vcsTag = System.getenv('TRAVIS_TAG')
+        }
+    }
 }
 
 task wrapper(type: Wrapper) {

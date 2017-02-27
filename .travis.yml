@@ -14,3 +14,18 @@ before_install:
   - ./gradlew downloadDependencies
 after_script:
   - ./gradlew sendCoverageToCodacy
+
+deploy:
+  provider: releases
+  api_key:
+    secure: ${GH_TOKEN}
+  file:
+    - build/libs/RADAR-MongoDbConnector-${TRAVIS_TAG}.jar
+    - build/libs/RADAR-MongoDbConnector-${TRAVIS_TAG}-javadoc.jar
+    - build/libs/RADAR-MongoDbConnector-${TRAVIS_TAG}-sources.jar
+  skip_cleanup: true
+  on:
+    tags: true
+
+after_deploy:
+  - ./gradlew bintrayUpload
