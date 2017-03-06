@@ -152,7 +152,7 @@ publishing {
                 def root = asNode()
                 root.appendNode('description', 'The MongoDB sink connector is a tool for scalably and reliably streaming data between Apache Kafka and MongoDB.')
                 root.appendNode('name', 'kafka-connect-mongodb-sink')
-                root.appendNode('url', 'https://github.com/RADAR-CNS/RADAR-MongoDbConnector.git')
+                root.appendNode('url', 'https://github.com/RADAR-CNS/MongoDb-Sink-Connector.git')
                 root.children().last() + pomConfig
             }
         }
@@ -171,7 +171,7 @@ bintray {
         name = 'kafka-connect-mongodb-sink'
         userOrg = 'radar-cns'
         licenses = ['Apache-2.0']
-        vcsUrl = 'https://github.com/RADAR-CNS/RADAR-MongoDbConnector.git'
+        vcsUrl = 'https://github.com/RADAR-CNS/MongoDb-Sink-Connector.git'
         version {
             name = project.version
             desc = 'Initial alpha release'
