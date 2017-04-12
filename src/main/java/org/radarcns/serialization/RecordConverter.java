@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 Kings College London and The Hyve
+ * Copyright 2017 The Hyve and King's College London
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
