@@ -1,6 +1,6 @@
 # RADAR-MongoDbConnector
 
-[![Build Status](https://travis-ci.org/RADAR-CNS/RADAR-MongoDbConnector.svg?branch=master)](https://travis-ci.org/RADAR-CNS/RADAR-MongoDbConnector)
+[![Build Status](https://travis-ci.org/RADAR-CNS/MongoDb-Sink-Connector.svg?branch=master)](https://travis-ci.org/RADAR-CNS/MongoDb-Sink-Connector)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/64eb2330ca7146fcb0b823816f44fcb8)](https://www.codacy.com/app/RADAR-CNS/RADAR-MongoDbConnector?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=RADAR-CNS/RADAR-MongoDbConnector&amp;utm_campaign=Badge_Grade)
 
 The MongoDB sink connector is a tool for scalably and reliably streaming data between Apache Kafka and MongoDB. It exports Avro data from Kafka topics into the MongoDB.
