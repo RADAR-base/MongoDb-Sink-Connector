@@ -28,6 +28,7 @@ import java.util.concurrent.BlockingQueue;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.AbstractConfig;
+import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.errors.IllegalWorkerStateException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
@@ -47,8 +48,8 @@ import org.slf4j.LoggerFactory;
  */
 public class MongoDbSinkTask extends SinkTask {
     private static final Logger log = LoggerFactory.getLogger(MongoDbSinkTask.class);
-    private final Monitor monitor;
-    private final DurationTimer actionTimer;
+    private Monitor monitor;
+    private DurationTimer actionTimer;
     private final Map<TopicPartition, Long> latestOffsetPut;
 
     private BlockingQueue<SinkRecord> buffer;
@@ -89,10 +90,19 @@ public class MongoDbSinkTask extends SinkTask {
         writerThread.start();
     }
 
-    // public helper function for easier mocking
+    /**
+     * Helper function to create a {@link MongoDbWriter} instance
+     * @param config object
+     * @param buffer buffer of the records
+     * @param converterFactory of available converters
+     * @param timer for writer
+     * @return a {@link MongoDbWriter} object
+     * @throws ConnectException
+     */
     public MongoDbWriter createMongoDbWriter(AbstractConfig config,
                                       BlockingQueue<SinkRecord> buffer,
-                                      RecordConverterFactory converterFactory, Timer timer) {
+                                      RecordConverterFactory converterFactory, Timer timer)
+            throws ConnectException {
         MongoWrapper mongoHelper = new MongoWrapper(config, null);
 
         return new MongoDbWriter(mongoHelper, buffer, converterFactory, timer);
@@ -100,55 +110,72 @@ public class MongoDbSinkTask extends SinkTask {
 
     @Override
     public void put(Collection<SinkRecord> sinkRecords) {
-        if (log.isDebugEnabled()) {
-            log.debug("Init put");
-            actionTimer.reset();
-        }
+        if(writer !=null) {
+            if (log.isDebugEnabled()) {
+                log.debug("Init put");
+                actionTimer.reset();
+            }
 
-        for (SinkRecord record : sinkRecords) {
-            TopicPartition partition = new TopicPartition(record.topic(), record.kafkaPartition());
-            latestOffsetPut.put(partition, record.kafkaOffset());
-            buffer.add(record);
-            monitor.increment();
+            for (SinkRecord record : sinkRecords) {
+                TopicPartition partition = new TopicPartition(record.topic(),
+                        record.kafkaPartition());
+                latestOffsetPut.put(partition, record.kafkaOffset());
+                buffer.add(record);
+                monitor.increment();
+
+                if (log.isDebugEnabled()) {
+                    log.debug("{} --> {}", partition, record.kafkaOffset());
+                }
+            }
 
             if (log.isDebugEnabled()) {
-                log.debug("{} --> {}", partition, record.kafkaOffset());
+                log.debug("[PUT] Time elapsed: {} s", actionTimer.duration());
+                log.debug("End put");
             }
-        }
-
-        if (log.isDebugEnabled()) {
-            log.debug("[PUT] Time elapsed: {} s", actionTimer.duration());
-            log.debug("End put");
         }
     }
 
     @Override
     public void flush(Map<TopicPartition, OffsetAndMetadata> offsets) {
-        log.debug("Init flush");
-        actionTimer.reset();
+        if(writer !=null) {
+            log.debug("Init flush");
+            actionTimer.reset();
 
-        Map<TopicPartition, Long> offsetsPut = new HashMap<>();
-        for (TopicPartition partition : offsets.keySet()) {
-            Long offset = latestOffsetPut.get(partition);
-            if (offset != null) {
-                offsetsPut.put(partition, offset);
+            Map<TopicPartition, Long> offsetsPut = new HashMap<>();
+            for (TopicPartition partition : offsets.keySet()) {
+                Long offset = latestOffsetPut.get(partition);
+                if (offset != null) {
+                    offsetsPut.put(partition, offset);
+                }
             }
-        }
-        writer.flush(offsetsPut);
+            writer.flush(offsetsPut);
 
-        log.info("[FLUSH] Time elapsed: {} s", actionTimer.duration());
-        log.debug("End flush");
+            log.info("[FLUSH] Time elapsed: {} s", actionTimer.duration());
+            log.debug("End flush");
+        }
     }
 
     @Override
     public void stop() {
-        writer.close();
-        writerThread.interrupt();
-        timerThread.cancel();
-        try {
-            writerThread.join(30_000L);
-        } catch (InterruptedException ex) {
-            log.info("Failed to wait for writer thread to finish.", ex);
+        log.info("Stopping MongoDBSinkTask");
+        if (writer != null) {
+            writer.close();
         }
+        if (writerThread != null) {
+            writerThread.interrupt();
+            try {
+                writerThread.join(30_000L);
+            } catch (InterruptedException ex) {
+                log.info("Failed to wait for writer thread to finish.", ex);
+            }
+        }
+        timerThread.cancel();
+
+        //clean initialized resources
+        monitor.cancel();
+        monitor = null;
+
+        actionTimer = null;
+        log.info("Stoped MongoDBSinkTask");
     }
 }

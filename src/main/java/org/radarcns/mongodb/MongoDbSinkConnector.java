@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.kafka.common.config.Config;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.config.ConfigValue;
@@ -141,4 +142,10 @@ public class MongoDbSinkConnector extends SinkConnector {
     public static void main(String... args) {
         System.out.println(new MongoDbSinkConnector().config().toHtmlTable());
     }
+
+    @Override
+    public Config validate(Map<String, String> connectorConfigs) {
+        return super.validate(connectorConfigs);
+    }
+
 }
