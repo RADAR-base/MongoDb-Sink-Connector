@@ -317,7 +317,7 @@ This `MongoDB-Sink-Connector` works based on `RecordConverter`s to convert a `Si
 The default [RecordConverter](https://github.com/RADAR-CNS/MongoDb-Sink-Connector/blob/master/src/main/java/org/radarcns/serialization/RecordConverter.java) is [GenericRecordConverter](https://github.com/RADAR-CNS/MongoDb-Sink-Connector/blob/dev/src/main/java/org/radarcns/serialization/GenericRecordConverter.java), which converts a record-key as `_id` and adds a field for every field-name from record-value.
 The `GenericRecordConverter` supports conversion of most of the primitive types and collections.
 
-For Avro records with complex schemas, or for custom collection format it is recommended to write your own extended `RecordConverter` and register it to an extended `RecordConverterFactory`.
+For Avro records with complex schemas, or for custom collection format it is recommended to write your own `RecordConverter` and register it to an extended `RecordConverterFactory`.
 
 Writing a custom `RecordConverter` is relatively straight forward. The interface requires two methods to be implemented.
 ```java
@@ -339,13 +339,13 @@ public interface RecordConverter {
      *
      * @param record record to convert
      * @return BSON document
-     * @throws  if the record cannot be converted by the current converter.
+     * @throws DataException if the record cannot be converted by the current converter.
      */
     Document convert(SinkRecord record) throws DataException;
 }
 ```
 
-### Example Implementation
+### Sample RecordConverter Implementation
 1. Implement a custom RecordConverter. An example is given below.
 Consider a record consisting `key-schema` 
 ```shell
@@ -376,7 +376,7 @@ and a `value-schema` as below.
   ]
 }
 ```
-These samples would give us the `KeySchemaName` ad `org.radarcns.key.MeasurementKey` and `ValueSchemaName` as `org.radarcns.application.ApplicationRecordCounts`.
+These samples would give us the `KeySchemaName` as `org.radarcns.key.MeasurementKey` and `ValueSchemaName` as `org.radarcns.application.ApplicationRecordCounts`.
 
 Lets call our custom `RecordConverter` as `CountsStatusRecordConverter`. The implementation can be as simple as below.
 ```java
