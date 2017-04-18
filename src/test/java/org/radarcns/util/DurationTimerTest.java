@@ -16,19 +16,19 @@
 
 package org.radarcns.util;
 
-import java.util.Map;
+import static org.junit.Assert.assertTrue;
 
-public final class Utility {
-    private Utility() {
-        // utility class
-    }
+import org.junit.Test;
 
-    public static String convertConfigToString(Map<String, String> map) {
-        StringBuilder ret = new StringBuilder(25 + map.size() * 30);
-        ret.append("User configuration are: ");
-        for (Map.Entry<String, String> entry : map.entrySet()) {
-            ret.append("\n\t").append(entry.getKey()).append(": ").append(entry.getValue());
-        }
-        return ret.toString();
+public class DurationTimerTest {
+    @Test
+    public void duration() throws Exception {
+        DurationTimer timer = new DurationTimer();
+        assertTrue(timer.duration() < 0.01d);
+        Thread.sleep(100L);
+        assertTrue(timer.duration() > 0.1d);
+        assertTrue(timer.duration() > 0.1d);
+        timer.reset();
+        assertTrue(timer.duration() < 0.01d);
     }
 }

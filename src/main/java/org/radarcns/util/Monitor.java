@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 Kings College London and The Hyve
+ * Copyright 2017 The Hyve and King's College London
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,10 @@
 
 package org.radarcns.util;
 
-import org.slf4j.Logger;
-
 import java.util.Collection;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.slf4j.Logger;
 
 /**
  * Monitors a count and buffer variable by printing out their values and resetting them.
@@ -49,16 +48,15 @@ public class Monitor extends TimerTask {
     /**
      * Logs the current count and, if applicable buffer size.
      *
-     * This resets the current count to 0.
+     * <p>This resets the current count to 0.
      */
     @Override
     public void run() {
-        if(buffer == null) {
+        if (buffer == null) {
             log.info("{} {}", count.getAndSet(0), message);
-        }
-        else {
-            log.info("{} {} {} records need to be processed.", count.getAndSet(0), message,
-                    buffer.size());
+        } else {
+            log.info("{} {} {} records need to be processed.",
+                    count.getAndSet(0), message, buffer.size());
         }
     }
 

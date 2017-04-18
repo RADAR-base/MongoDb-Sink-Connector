@@ -16,19 +16,23 @@
 
 package org.radarcns.util;
 
-import java.util.Map;
+/**
+ * Measure the duration of an action. Not thread-safe.
+ */
+public class DurationTimer {
+    private long nanoTime;
 
-public final class Utility {
-    private Utility() {
-        // utility class
+    public DurationTimer() {
+        reset();
     }
 
-    public static String convertConfigToString(Map<String, String> map) {
-        StringBuilder ret = new StringBuilder(25 + map.size() * 30);
-        ret.append("User configuration are: ");
-        for (Map.Entry<String, String> entry : map.entrySet()) {
-            ret.append("\n\t").append(entry.getKey()).append(": ").append(entry.getValue());
-        }
-        return ret.toString();
+    /** Reset the timer to zero. */
+    public final void reset() {
+        nanoTime = System.nanoTime();
+    }
+
+    /** Duration since creation or last reset, in seconds. */
+    public double duration() {
+        return (System.nanoTime() - nanoTime) / 1_000_000_000d;
     }
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 Kings College London and The Hyve
+ * Copyright 2017 The Hyve and King's College London
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import org.apache.kafka.common.config.ConfigException;
 /**
  * Validate a class name.
  */
-public class ValidClass implements ConfigDef.Validator {
+public final class ValidClass implements ConfigDef.Validator {
     private final Class<?> superClass;
 
     private ValidClass(Class<?> superClass) {
@@ -38,18 +38,18 @@ public class ValidClass implements ConfigDef.Validator {
     }
 
     @Override
-    public void ensureValid(String name, Object o) {
-        Class<?> cls = (Class<?>) o;
+    public void ensureValid(String name, Object obj) {
+        Class<?> cls = (Class<?>) obj;
         if (!superClass.isAssignableFrom(cls)) {
-            throw new ConfigException(name, o,
-                    "Class " + o + " must be subclass of " + superClass.getName());
+            throw new ConfigException(name, obj,
+                    "Class " + obj + " must be subclass of " + superClass.getName());
         }
         try {
             cls.newInstance();
-        } catch (InstantiationException e) {
-            throw new ConfigException(name, o, "Class " + o + " must be instantiable: " + e);
-        } catch (IllegalAccessException e) {
-            throw new ConfigException(name, o, "Class " + o + " must be accessible: " + e);
+        } catch (InstantiationException ex) {
+            throw new ConfigException(name, obj, "Class " + obj + " must be instantiable: " + ex);
+        } catch (IllegalAccessException ex) {
+            throw new ConfigException(name, obj, "Class " + obj + " must be accessible: " + ex);
         }
     }
 }

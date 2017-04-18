@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 Kings College London and The Hyve
+ * Copyright 2017 The Hyve and King's College London
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,29 +16,30 @@
 
 package org.radarcns.serialization;
 
+import java.util.Collection;
 import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.bson.Document;
 
-import java.util.Collection;
-
 /**
- * Converts Kafka records to MongoDB documents
+ * Converts Kafka records to MongoDB documents.
  */
 public interface RecordConverter {
     /**
      * Collection of {@link org.apache.kafka.connect.data.Schema} names supported by this
      * RecordConverter.
      *
-     * The schema names used are the fully qualified (including namespace) and case-sensitive names.
-     * If the converter requires records with both a key and a value schema, the returned format is
-     * "KeySchemaName-ValueSchemaName". If the key is not required, only "ValueSchemaName" may be
-     * returned.
+     * <p>The schema names used are the fully qualified (including namespace) and case-sensitive
+     * names. If the converter requires records with both a key and a value schema, the  returned
+     * format is "KeySchemaName-ValueSchemaName". If the key is not required, only "ValueSchemaName"
+     * may be returned. KeySchemaName and ValueSchemaName may be substituted by the Object class
+     * that it supports. If the converter supports all types of data, return null.
      */
     Collection<String> supportedSchemaNames();
 
     /**
      * Convert a Kafka record to a BSON document.
+     *
      * @param record record to convert
      * @return BSON document
      * @throws DataException if the record cannot be converted by the current converter.

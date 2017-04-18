@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 Kings College London and The Hyve
+ * Copyright 2017 The Hyve and King's College London
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 
 package org.radarcns.util;
 
+import static org.junit.Assert.assertNotNull;
+
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;
 import org.junit.Test;
 import org.omg.CORBA.Object;
-
-import static org.junit.Assert.*;
 
 public class ValidClassTest {
     @Test
@@ -30,7 +30,7 @@ public class ValidClassTest {
         assertNotNull(validator);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void isSubclassOfNull() throws Exception {
         ValidClass.isSubclassOf(null);
     }
@@ -44,21 +44,21 @@ public class ValidClassTest {
         validator.ensureValid("myname", B.class);
     }
 
-    @Test(expected=ConfigException.class)
+    @Test(expected = ConfigException.class)
     public void ensureValidNotSubclass() {
         ConfigDef.Validator validator = ValidClass.isSubclassOf(A.class);
         validator.ensureValid("myname", C.class);
 
     }
 
-    @Test(expected=ConfigException.class)
+    @Test(expected = ConfigException.class)
     public void ensureValidNotInstantiable() {
         // not instantiable
         ConfigDef.Validator validator = ValidClass.isSubclassOf(D.class);
         validator.ensureValid("myname", D.class);
     }
 
-    @Test(expected=ConfigException.class)
+    @Test(expected = ConfigException.class)
     public void ensureValidNotAccessible() {
         // not instantiable
         ConfigDef.Validator validator = ValidClass.isSubclassOf(A.class);
@@ -66,9 +66,15 @@ public class ValidClassTest {
     }
 
     static class A {}
+
     static class B extends A {}
+
     static class C {}
+
     // not instantiable
-    static class D { private D() {} }
+    static class D {
+        private D() {}
+    }
+
     private static class E extends A {}
 }

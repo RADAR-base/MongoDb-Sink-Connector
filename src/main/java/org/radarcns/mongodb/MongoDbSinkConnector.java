@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 Kings College London and The Hyve
+ * Copyright 2017 The Hyve and King's College London
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,18 @@
 
 package org.radarcns.mongodb;
 
+import static org.apache.kafka.common.config.ConfigDef.Importance.HIGH;
+import static org.apache.kafka.common.config.ConfigDef.Importance.LOW;
+import static org.apache.kafka.common.config.ConfigDef.Importance.MEDIUM;
+import static org.apache.kafka.common.config.ConfigDef.NO_DEFAULT_VALUE;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.apache.kafka.common.config.ConfigDef;
+import org.apache.kafka.common.config.ConfigDef.Type;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.config.ConfigValue;
 import org.apache.kafka.common.utils.AppInfoParser;
@@ -29,23 +40,13 @@ import org.radarcns.util.ValidClass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static org.apache.kafka.common.config.ConfigDef.Importance.HIGH;
-import static org.apache.kafka.common.config.ConfigDef.Importance.LOW;
-import static org.apache.kafka.common.config.ConfigDef.Importance.MEDIUM;
-import static org.apache.kafka.common.config.ConfigDef.NO_DEFAULT_VALUE;
-
 /**
  * Configures the connection between Kafka and MongoDB.
  */
 public class MongoDbSinkConnector extends SinkConnector {
-    private static final Logger log = LoggerFactory.getLogger(MongoDbSinkConnector.class);
+    private static final Logger logger = LoggerFactory.getLogger(MongoDbSinkConnector.class);
 
+    public static final String MONGO_GROUP = "MongoDB";
     public static final String MONGO_HOST = "mongo.host";
     public static final String MONGO_PORT = "mongo.port";
     public static final int MONGO_PORT_DEFAULT = 27017;
@@ -57,6 +58,39 @@ public class MongoDbSinkConnector extends SinkConnector {
     public static final String COLLECTION_FORMAT = "mongo.collection.format";
     public static final String RECORD_CONVERTER = "record.converter.class";
 
+    private static final ConfigDef CONFIG_DEF = new ConfigDef()
+            .define(MONGO_HOST, Type.STRING, NO_DEFAULT_VALUE, new NotEmptyString(), HIGH,
+                "MongoDB host name to write data to", MONGO_GROUP, 0, ConfigDef.Width.MEDIUM,
+                "MongoDB hostname")
+            .define(MONGO_PORT, Type.INT, MONGO_PORT_DEFAULT, ConfigDef.Range.atLeast(1),
+                LOW, "MongoDB port", MONGO_GROUP, 1, ConfigDef.Width.SHORT, "MongoDB port")
+            .define(MONGO_DATABASE, Type.STRING, NO_DEFAULT_VALUE, new NotEmptyString(),
+                HIGH, "MongoDB database name", MONGO_GROUP, 2, ConfigDef.Width.SHORT,
+                "MongoDB database")
+            .define(MONGO_USERNAME, Type.STRING, null, MEDIUM,
+                "Username to connect to MongoDB database. If not set, no credentials are used.",
+                    MONGO_GROUP, 3, ConfigDef.Width.SHORT, "MongoDB username",
+                Collections.singletonList(MONGO_PASSWORD))
+            .define(MONGO_PASSWORD, Type.STRING, null, MEDIUM,
+                "Password to connect to MongoDB database. If not set, no credentials are used.",
+                    MONGO_GROUP, 4, ConfigDef.Width.SHORT, "MongoDB password",
+                Collections.singletonList(MONGO_USERNAME))
+            .define(COLLECTION_FORMAT, Type.STRING, "{$topic}", new NotEmptyString(), MEDIUM,
+                "A format string for the destination collection name, which may contain "
+                + "`${topic}` as a placeholder for the originating topic name.\n"
+                + "For example, `kafka_${topic}` for the topic `orders` will map to the "
+                + "collection name `kafka_orders`.", MONGO_GROUP, 5, ConfigDef.Width.LONG,
+                "MongoDB collection name format")
+            .define(TOPICS_CONFIG, Type.LIST, NO_DEFAULT_VALUE, HIGH,
+                "List of topics to be streamed.")
+            .define(BUFFER_CAPACITY, Type.INT, BUFFER_CAPACITY_DEFAULT,
+                ConfigDef.Range.atLeast(1), LOW,
+                "Maximum number of items in a MongoDB writer buffer. Once the buffer becomes "
+                + "full, the task fails.")
+            .define(RECORD_CONVERTER, Type.CLASS, RecordConverterFactory.class,
+                ValidClass.isSubclassOf(RecordConverterFactory.class), MEDIUM,
+                "RecordConverterFactory that returns classes to convert Kafka SinkRecords to "
+                + "BSON documents.");
     private Map<String, String> connectorConfig;
 
     @Override
@@ -79,7 +113,7 @@ public class MongoDbSinkConnector extends SinkConnector {
         }
 
         connectorConfig = new HashMap<>(props);
-        log.info(Utility.convertConfigToString(connectorConfig));
+        logger.info(Utility.convertConfigToString(connectorConfig));
     }
 
     @Override
@@ -89,57 +123,23 @@ public class MongoDbSinkConnector extends SinkConnector {
 
     @Override
     public List<Map<String, String>> taskConfigs(int maxTasks) {
-        log.info("At most {} will be started", maxTasks);
+        logger.info("At most {} will be started", maxTasks);
 
         return Collections.nCopies(maxTasks, connectorConfig);
     }
 
     @Override
     public void stop() {
-        log.debug("Stop");
+        logger.debug("Stop");
         // Nothing to do since it has no background monitoring.
     }
 
     @Override
     public ConfigDef config() {
-        ConfigDef conf = new ConfigDef();
-        conf.define(MONGO_HOST, ConfigDef.Type.STRING, NO_DEFAULT_VALUE, new NotEmptyString(), HIGH,
-                "MongoDB host name to write data to", "MongoDB", 0, ConfigDef.Width.MEDIUM,
-                "MongoDB hostname");
-        conf.define(MONGO_PORT, ConfigDef.Type.INT, MONGO_PORT_DEFAULT, ConfigDef.Range.atLeast(1),
-                LOW, "MongoDB port", "MongoDB", 1, ConfigDef.Width.SHORT, "MongoDB port");
-        conf.define(MONGO_DATABASE, ConfigDef.Type.STRING, NO_DEFAULT_VALUE, new NotEmptyString(),
-                HIGH, "MongoDB database name", "MongoDB", 2, ConfigDef.Width.SHORT,
-                "MongoDB database");
-        conf.define(MONGO_USERNAME, ConfigDef.Type.STRING, null, MEDIUM,
-                "Username to connect to MongoDB database. If not set, no credentials are used.",
-                "MongoDB", 3, ConfigDef.Width.SHORT, "MongoDB username",
-                Collections.singletonList(MONGO_PASSWORD));
-        conf.define(MONGO_PASSWORD, ConfigDef.Type.STRING, null, MEDIUM,
-                "Password to connect to MongoDB database. If not set, no credentials are used.",
-                "MongoDB", 4, ConfigDef.Width.SHORT, "MongoDB password",
-                Collections.singletonList(MONGO_USERNAME));
-        conf.define(COLLECTION_FORMAT, ConfigDef.Type.STRING, "{$topic}", new NotEmptyString(),
-                MEDIUM,
-                "A format string for the destination collection name, which may contain `${topic}`"
-                + "as a placeholder for the originating topic name.\n"
-                + "For example, `kafka_${topic}` for the topic `orders` will map to the "
-                + "collection name `kafka_orders`.", "MongoDB", 5, ConfigDef.Width.LONG,
-                "MongoDB collection name format");
-        conf.define(TOPICS_CONFIG, ConfigDef.Type.LIST, NO_DEFAULT_VALUE, HIGH,
-                "List of topics to be streamed.");
-        conf.define(BUFFER_CAPACITY, ConfigDef.Type.INT, BUFFER_CAPACITY_DEFAULT,
-                ConfigDef.Range.atLeast(1), LOW,
-                "Maximum number of items in a MongoDB writer buffer. Once the buffer becomes full,"
-                + "the task fails.");
-        conf.define(RECORD_CONVERTER, ConfigDef.Type.CLASS, RecordConverterFactory.class,
-                ValidClass.isSubclassOf(RecordConverterFactory.class), MEDIUM,
-                "RecordConverterFactory that returns classes to convert Kafka SinkRecords to BSON "
-                + "documents.");
-        return conf;
+        return CONFIG_DEF;
     }
 
     public static void main(String... args) {
-        System.out.println(new MongoDbSinkConnector().config().toHtmlTable());
+        logger.info("Configuration table: \n{}", new MongoDbSinkConnector().config().toHtmlTable());
     }
 }

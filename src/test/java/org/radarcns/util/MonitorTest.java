@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 Kings College London and The Hyve
+ * Copyright 2017 The Hyve and King's College London
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,15 @@
 
 package org.radarcns.util;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.slf4j.Logger;
-
-import java.util.ArrayList;
-import java.util.Collection;
-
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import org.junit.Before;
+import org.junit.Test;
+import org.slf4j.Logger;
 
 public class MonitorTest {
     private Logger mockLogger;

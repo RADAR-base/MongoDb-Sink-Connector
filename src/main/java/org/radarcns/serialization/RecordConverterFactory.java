@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 Kings College London and The Hyve
+ * Copyright 2017 The Hyve and King's College London
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,17 @@
 
 package org.radarcns.serialization;
 
-import org.apache.kafka.connect.errors.DataException;
-import org.apache.kafka.connect.sink.SinkRecord;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.kafka.connect.errors.DataException;
+import org.apache.kafka.connect.sink.SinkRecord;
 
 /**
  * Factory for {@link RecordConverter} classes.
  *
- * These classes generate BSON {@link org.bson.Document} from Kafka {@link SinkRecord}. Override
+ * <p>These classes generate BSON {@link org.bson.Document} from Kafka {@link SinkRecord}. Override
  * {@link #genericConverters()} to start with a different set of converters. Override
  * {@link #getRecordConverter(SinkRecord)} (preferably calling the super implementation) to use a
  * different mechanism to allocate a converter to a record.
@@ -47,21 +46,21 @@ public class RecordConverterFactory {
     /**
      * Give a list of converters supporting generic data types.
      *
-     * The converters themselves will * indicate what data types they support, using the
+     * <p>The converters themselves will indicate what data types they support, using the
      * {@link RecordConverter#supportedSchemaNames()} method. Override to have a different set
      * of supported converters.
      */
     protected List<RecordConverter> genericConverters() {
         return Arrays.asList(
-                new AggregatedAccelerationRecordConverter(),
-                new DoubleAggregatedRecordConverter());
+                new GenericRecordConverter());
     }
 
     /**
      * Generate a converter from given record.
      *
-     * By default, this returns generic datatype converters. Override to return specific topic-based
-     * converters.
+     * <p>By default, this returns generic datatype converters. Override to return specific
+     * topic-based converters.
+     *
      * @param record record to convert
      * @return {@link RecordConverter} capable of converting that record
      * @throws DataException if no suitable {@link RecordConverter} was found.
@@ -99,11 +98,13 @@ public class RecordConverterFactory {
                     keySchemaName + "-" + valueSchemaType,
                     keySchemaType + "-" + valueSchemaType,
                     valueSchemaType,
+                    null,
             };
         } else {
             return new String[] {
                     valueSchemaName,
                     valueSchemaType,
+                    null,
             };
         }
 

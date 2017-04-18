@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 Kings College London and The Hyve
+ * Copyright 2017 The Hyve and King's College London
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,6 @@
 
 package org.radarcns.mongodb;
 
-import org.apache.kafka.common.config.ConfigException;
-import org.junit.Test;
-
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-
 import static org.apache.kafka.connect.sink.SinkConnector.TOPICS_CONFIG;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasSize;
@@ -36,6 +29,12 @@ import static org.radarcns.mongodb.MongoDbSinkConnector.MONGO_HOST;
 import static org.radarcns.mongodb.MongoDbSinkConnector.MONGO_PORT;
 import static org.radarcns.mongodb.MongoDbSinkConnector.MONGO_PORT_DEFAULT;
 import static org.radarcns.mongodb.MongoDbSinkConnector.MONGO_USERNAME;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import org.apache.kafka.common.config.ConfigException;
+import org.junit.Test;
 
 public class MongoDbSinkConnectorTest {
     @Test
@@ -64,7 +63,7 @@ public class MongoDbSinkConnectorTest {
         assertNull(result.get(MONGO_USERNAME));
     }
 
-    @Test(expected=org.apache.kafka.common.config.ConfigException.class)
+    @Test(expected = ConfigException.class)
     public void configParseInvalidValue() throws Exception {
         Map<String, String> exampleConfig = new HashMap<>();
         exampleConfig.put(MONGO_HOST, "localhost");
@@ -76,7 +75,7 @@ public class MongoDbSinkConnectorTest {
         new MongoDbSinkConnector().config().parse(exampleConfig);
     }
 
-    @Test(expected=org.apache.kafka.common.config.ConfigException.class)
+    @Test(expected = ConfigException.class)
     public void configParseEmptyValue() throws Exception {
         Map<String, String> exampleConfig = new HashMap<>();
         exampleConfig.put(MONGO_HOST, "");
@@ -98,7 +97,7 @@ public class MongoDbSinkConnectorTest {
         new MongoDbSinkConnector().start(exampleConfig);
     }
 
-    @Test(expected=ConfigException.class)
+    @Test(expected = ConfigException.class)
     public void startInvalid() {
         Map<String, String> exampleConfig = new HashMap<>();
         exampleConfig.put(MONGO_HOST, "");

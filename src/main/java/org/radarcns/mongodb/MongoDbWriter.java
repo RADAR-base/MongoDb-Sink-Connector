@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 Kings College London and The Hyve
+ * Copyright 2017 The Hyve and King's College London
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,9 @@
 
 package org.radarcns.mongodb;
 
-import org.apache.kafka.clients.consumer.OffsetAndMetadata;
-import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.connect.errors.ConnectException;
-import org.apache.kafka.connect.errors.DataException;
-import org.apache.kafka.connect.sink.SinkRecord;
-import org.bson.Document;
-import org.radarcns.serialization.RecordConverter;
-import org.radarcns.serialization.RecordConverterFactory;
-import org.radarcns.util.Monitor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.mongodb.MongoException;
+import com.mongodb.client.MongoCursor;
+import com.mongodb.client.MongoIterable;
 import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,14 +28,25 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.connect.errors.ConnectException;
+import org.apache.kafka.connect.errors.DataException;
+import org.apache.kafka.connect.sink.SinkRecord;
+import org.bson.Document;
+import org.radarcns.serialization.RecordConverter;
+import org.radarcns.serialization.RecordConverterFactory;
+import org.radarcns.util.DurationTimer;
+import org.radarcns.util.Monitor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A thread that reads Kafka SinkRecords from a buffer and writes them to a MongoDB database.
  *
- * It keeps track of the latest offsets of records that have been written, so that a flush operation
- * can be done against specific Kafka offsets.
+ * <p>It keeps track of the latest offsets of records that have been written, so that a flush
+ * operation can be done against specific Kafka offsets.
  */
-public class MongoDbWriter extends Thread implements Closeable {
+public class MongoDbWriter implements Closeable, Runnable {
     private static final Logger log = LoggerFactory.getLogger(MongoDbWriter.class);
     private static final int NUM_RETRIES = 3;
 
@@ -69,7 +71,6 @@ public class MongoDbWriter extends Thread implements Closeable {
     public MongoDbWriter(MongoWrapper mongoHelper, BlockingQueue<SinkRecord> buffer,
                          RecordConverterFactory converterFactory, Timer timer)
             throws ConnectException {
-        super("MongoDB-writer");
         this.buffer = buffer;
         this.monitor = new Monitor(log, "have been written in MongoDB", this.buffer);
         timer.schedule(monitor, 0, 30_000);
@@ -87,6 +88,8 @@ public class MongoDbWriter extends Thread implements Closeable {
         this.converterFactory = converterFactory;
 
         exception = null;
+
+        retrieveOffsets();
     }
 
     @Override
@@ -97,12 +100,19 @@ public class MongoDbWriter extends Thread implements Closeable {
             SinkRecord record;
             try {
                 record = buffer.take();
-            } catch (InterruptedException e) {
-                log.debug("Interrupted while polling buffer", e);
+            } catch (InterruptedException ex) {
+                log.debug("Interrupted while polling buffer", ex);
                 continue;
             }
+            TopicPartition partition = new TopicPartition(record.topic(), record.kafkaPartition());
+            // Do not write same record twice
+            Long offsetWritten = latestOffsets.get(partition);
+            if (offsetWritten != null && offsetWritten >= record.kafkaOffset()) {
+                continue;
+            }
+
             store(record, 0);
-            processedRecord(record);
+            processedRecord(record, partition);
         }
 
         mongoHelper.close();
@@ -115,26 +125,24 @@ public class MongoDbWriter extends Thread implements Closeable {
             Document doc = getDoc(record);
             mongoHelper.store(record.topic(), doc);
             monitor.increment();
-        } catch (DataException e) {
+        } catch (DataException ex) {
             log.error("Unsupported MongoDB data type in data from Kafka. Skipping record {}",
-                    record, e);
-            setException(e);
-        } catch (Exception e){
-            tries++;
-            if (tries < NUM_RETRIES) {
-                log.error("Exception while trying to add record {}, retrying", record, e);
-                store(record, tries);
+                    record, ex);
+            setException(ex);
+        } catch (Exception ex) {
+            if (tries + 1 < NUM_RETRIES) {
+                log.error("Exception while trying to add record {}, retrying", record, ex);
+                store(record, tries + 1);
             } else {
-                setException(e);
-                log.error("Exception while trying to add record {}, skipping", record, e);
+                setException(ex);
+                log.error("Exception while trying to add record {}, skipping", record, ex);
             }
         }
     }
 
-    private synchronized void processedRecord(SinkRecord record) {
-        TopicPartition topicPartition = new TopicPartition(record.topic(), record.kafkaPartition());
+    private synchronized void processedRecord(SinkRecord record, TopicPartition topicPartition) {
         latestOffsets.put(topicPartition,record.kafkaOffset());
-        notify();
+        notifyAll();
     }
 
     private synchronized void setException(Throwable ex) {
@@ -146,9 +154,9 @@ public class MongoDbWriter extends Thread implements Closeable {
 
         try {
             return converter.convert(record);
-        } catch (Exception e) {
-            log.error("Error while converting {}.", record, e);
-            throw new DataException("Record cannot be converted to a Document", e);
+        } catch (Exception ex) {
+            log.error("Error while converting {}.", record, ex);
+            throw new DataException("Record cannot be converted to a Document", ex);
         }
     }
 
@@ -157,46 +165,102 @@ public class MongoDbWriter extends Thread implements Closeable {
      * @param offsets offsets up to which to flush.
      * @throws ConnectException if the writer is interrupted.
      */
-    public synchronized void flush(Map<TopicPartition, OffsetAndMetadata> offsets)
+    public synchronized void flush(Map<TopicPartition, Long> offsets)
             throws ConnectException {
+
+        log.debug("Init flush-writer");
         if (exception != null) {
-            log.error("MongoDB writer is on illegal state");
-            throw new ConnectException("MongoDB writer is on illegal state", exception);
+            log.error("MongoDB writer is in an illegal state");
+            throw new ConnectException("MongoDB writer is in an illegal state", exception);
         }
 
-        try {
-            List<TopicPartition> waiting = new ArrayList<>(offsets.keySet());
-            while (true) {
-                Iterator<TopicPartition> waitingIterator = waiting.iterator();
-                while (waitingIterator.hasNext()) {
-                    TopicPartition topicPartition = waitingIterator.next();
-                    Long offset = latestOffsets.get(topicPartition);
-                    if (offset != null && offset >= offsets.get(topicPartition).offset()) {
-                        waitingIterator.remove();
-                    }
-                }
-                if (waiting.isEmpty()) {
-                    return;
-                }
+        DurationTimer timer = new DurationTimer();
+        logOffsets(offsets);
 
+        List<Map.Entry<TopicPartition, Long>> waiting = new ArrayList<>(offsets.entrySet());
+
+        while (true) {
+            Iterator<Map.Entry<TopicPartition, Long>> waitingIterator = waiting.iterator();
+
+            while (waitingIterator.hasNext()) {
+                Map.Entry<TopicPartition, Long> partitionOffset = waitingIterator.next();
+                Long offsetWritten = latestOffsets.get(partitionOffset.getKey());
+
+                if (offsetWritten != null && offsetWritten >= partitionOffset.getValue()) {
+                    waitingIterator.remove();
+                }
+            }
+
+            if (waiting.isEmpty()) {
+                log.info("[FLUSH-WRITER] Time-elapsed: {} s", timer.duration());
+                log.debug("End flush-writer");
+
+                break;
+            }
+
+            try {
                 // wait for additional messages to be processed
                 wait();
+            } catch (InterruptedException ex) {
+                throw new ConnectException("MongoDB writer was interrupted", ex);
             }
-        } catch (InterruptedException ex) {
-            throw new ConnectException("MongoDB writer was interrupted", ex);
+        }
+        storeOffsets();
+    }
+
+    private void logOffsets(Map<TopicPartition, Long> offsets) {
+        if (log.isDebugEnabled()) {
+            log.debug("Kafka Offsets: {}", offsets.size());
+            for (TopicPartition partition : offsets.keySet()) {
+                log.debug("{} - {}", partition, offsets.get(partition));
+            }
+            log.debug("LatestOffset: {}", latestOffsets.size());
+            for (TopicPartition partition : latestOffsets.keySet()) {
+                log.debug("{} - {}", partition, latestOffsets.get(partition));
+            }
+        }
+    }
+
+    private void storeOffsets() {
+        try {
+            for (Map.Entry<TopicPartition, Long> offset : latestOffsets.entrySet()) {
+                Document id = new Document();
+                id.put("topic", offset.getKey().topic());
+                id.put("partition", offset.getKey().partition());
+                Document doc = new Document();
+                doc.put("_id", id);
+                doc.put("offset", offset.getValue());
+                mongoHelper.store("OFFSETS", doc);
+            }
+        } catch (MongoException ex) {
+            log.warn("Failed to store offsets to MongoDB", ex);
+        }
+    }
+
+    private void retrieveOffsets() {
+        MongoIterable<Document> documentIterable = mongoHelper.getDocuments("OFFSETS");
+        try (MongoCursor<Document> documents = documentIterable.iterator()) {
+            while (documents.hasNext()) {
+                Document doc = documents.next();
+                Document id = (Document) doc.get("_id");
+                String topic = id.getString("topic");
+                int partition = id.getInteger("partition");
+                long offset = doc.getLong("offset");
+
+                latestOffsets.put(new TopicPartition(topic, partition), offset);
+            }
         }
     }
 
     /**
      * Closes the writer.
      *
-     * This will eventually close the thread but it will not wait for it. It will also not flush
+     * <p>This will eventually close the thread but it will not wait for it. It will also not flush
      * the buffer.
      */
     @Override
     public void close() {
         log.debug("Closing MongoDB writer");
         stopping.set(true);
-        interrupt();
     }
 }
