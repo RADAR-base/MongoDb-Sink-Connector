@@ -219,12 +219,16 @@ public enum JavaBsonType {
     public static BsonValue objectToBson(Object record) throws DataException {
         if (record == null) {
             return new BsonNull();
-        } else {
-            return getType(record).toBson(record);
         }
+
+        return getType(record).toBson(record);
     }
 
     public static String objectToString(Object o) {
+        if (o == null) {
+            return "null";
+        }
+
         return getType(o).toString(o);
     }
 
