@@ -14,9 +14,9 @@ Currently, it supports records that have a value schema.
 - MongoDB instance installed and running with access credentials
 - MongoDB-Sink-Connector executable
 
-
 ## Quickstart for MongoDb-Sink-Connector
 - Build MongoDB-Sink-Connector from source  or you can download the latest release from [here](https://github.com/RADAR-CNS/MongoDb-Sink-Connector/releases).
+
     ```shell
     git clone https://github.com/RADAR-CNS/MongoDb-Sink-Connector.git
     
@@ -26,7 +26,8 @@ Currently, it supports records that have a value schema.
     ```
 
 - Follow [Confluent platform Quick start ](http://docs.confluent.io/3.2.0/quickstart.html)to start zookeeper, kafka-server, schema-registry and kafka-rest to easily stream data to a Kafka topic
-    ```ini
+
+    ```shell
     # Start zookeeper
     zookeeper-server-start /etc/kafka/zookeeper.properties
     
@@ -42,7 +43,8 @@ Currently, it supports records that have a value schema.
 - Install and start MongoDB
 
 - Export kafka-connect-mongodb-sink-*.jar to `CLASSPATH`
-    ```ini
+
+    ```shell
     export CLASSPATH=/pathto/kafka-connect-mongodb-sink-*.jar
     ```
 - Modify [sink.properties](https://github.com/RADAR-CNS/MongoDb-Sink-Connector/blob/master/sink.properties) file according your environment. The following properties are supported:
@@ -78,8 +80,8 @@ For example, `kafka_${topic}` for the topic `orders` will map to the collection 
 </tbody></table>
 
 - A sample configuration may look as below.
-    ```ini
-    
+
+    ```ini    
     # Kafka consumer configuration
     name=kafka-connector-mongodb-sink
     
@@ -108,14 +110,17 @@ For example, `kafka_${topic}` for the topic `orders` will map to the collection 
     
 - Run the MongoDB-Sink-Connector in 
   - `standalone` mode
-    ```shell
-    connect-standalone /etc/schema-registry/connect-avro-standalone.properties ./sink.properties 
-    ```
+  
+      ```shell
+      connect-standalone /etc/schema-registry/connect-avro-standalone.properties ./sink.properties 
+      ```
   - `distributed` mode
-    ```shell
-    connect-distributed /patht/cluster.properties ./sink.properties
-    ```
+  
+      ```shell
+      connect-distributed /patht/cluster.properties ./sink.properties
+      ```
 - Stream sample data to configured `topics` in `sink.properties`. You may use, [rest-proxy](http://docs.confluent.io/3.2.0/kafka-rest/docs/intro.html#produce-and-consume-avro-messages) to do this easily.
+
     ```shell
     curl -X POST -H "Content-Type: application/vnd.kafka.avro.v2+json" \
           -H "Accept: application/vnd.kafka.v2+json" \
@@ -127,7 +132,8 @@ For example, `kafka_${topic}` for the topic `orders` will map to the collection 
       {"offsets":[{"partition":0,"offset":0,"error_code":null,"error":null}],"key_schema_id":null,"value_schema_id":21}
 
     ```  
-- If your all of your environment properties are configured properly, when you run the mongodb-sink-connector, you may see output as below. 
+- If your all of your environment properties are configured properly, when you run the mongodb-sink-connector, you may see output as below.
+ 
     ```shell
     SLF4J: Class path contains multiple SLF4J bindings.
     SLF4J: Found binding in [jar:file:/usr/share/java/confluent-common/slf4j-log4j12-1.7.6.jar!/org/slf4j/impl/StaticLoggerBinder.class]
@@ -272,6 +278,7 @@ For example, `kafka_${topic}` for the topic `orders` will map to the collection 
     [2017-04-14 15:24:37,131] INFO 2 have been written in MongoDB 0 records need to be processed. (org.radarcns.mongodb.MongoDbWriter:58)
     ```
 - You can view the data in MongoDB. For the above example you may see results as follows.
+
     ```shell
     # log-in to mongo cli
     mongo
@@ -312,14 +319,11 @@ For example, `kafka_${topic}` for the topic `orders` will map to the collection 
     ```
 - To stop your connector press `CTRL-C`
 
-## Developer-guide 
-This `MongoDB-Sink-Connector` works based on `RecordConverter`s to convert a `SinkRecord` to a `Document`.
-The default [RecordConverter](https://github.com/RADAR-CNS/MongoDb-Sink-Connector/blob/master/src/main/java/org/radarcns/serialization/RecordConverter.java) is [GenericRecordConverter](https://github.com/RADAR-CNS/MongoDb-Sink-Connector/blob/dev/src/main/java/org/radarcns/serialization/GenericRecordConverter.java), which converts a record-key as `_id` and adds a field for every field-name from record-value.
-The `GenericRecordConverter` supports conversion of most of the primitive types and collections.
+## Developer guide 
 
-For Avro records with complex schemas, or for custom collection format it is recommended to write your own `RecordConverter` and register it to an extended `RecordConverterFactory`.
+This `MongoDB-Sink-Connector` works based on `RecordConverter`s to convert a `SinkRecord` to a `Document`. The default [RecordConverter](https://github.com/RADAR-CNS/MongoDb-Sink-Connector/blob/master/src/main/java/org/radarcns/serialization/RecordConverter.java) is [GenericRecordConverter](https://github.com/RADAR-CNS/MongoDb-Sink-Connector/blob/dev/src/main/java/org/radarcns/serialization/GenericRecordConverter.java), which converts a record-key as `_id` and adds a field for every field-name from record-value. The `GenericRecordConverter` supports conversion of most of the primitive types and collections.
 
-Writing a custom `RecordConverter` is relatively straight forward. The interface requires two methods to be implemented.
+For Avro records with complex schemas, or for custom collection format it is recommended to write your own `RecordConverter` and register it to an extended `RecordConverterFactory`. Writing a custom `RecordConverter` is relatively straight forward. The interface requires two methods to be implemented.
 ```java
 /**
  * Converts Kafka records to MongoDB documents.
@@ -346,117 +350,118 @@ public interface RecordConverter {
 ```
 
 ### Sample RecordConverter Implementation
-1. Implement a custom RecordConverter. An example is given below.
-Consider a record consisting `key-schema` 
-```shell
-{
-  "namespace": "org.radarcns.key",
-  "type": "record",
-  "name": "MeasurementKey",
-  "doc": "Measurement key in the RADAR-CNS project",
-  "fields": [
-    {"name": "userId", "type": "string", "doc": "user ID"},
-    {"name": "sourceId", "type": "string", "doc": "device source ID"}
-  ]
-}
-```
-and a `value-schema` as below.
-```shell
-{
-  "namespace": "org.radarcns.application",
-  "type": "record",
-  "name": "ApplicationRecordCounts",
-  "doc": "Number of records cached or created.",
-  "fields": [
-    {"name": "time", "type": "double", "doc": "device timestamp in UTC (s)"},
-    {"name": "timeReceived", "type": "double", "doc": "device receiver timestamp in UTC (s)"},
-    {"name": "recordsCached", "type": "int", "doc": "number of records currently being cached", "default": -1},
-    {"name": "recordsSent", "type": "int", "doc": "number of records sent since application start"},
-    {"name": "recordsUnsent", "type": "int", "doc": "number of unsent records", "default": -1}
-  ]
-}
-```
-These samples would give us the `KeySchemaName` as `org.radarcns.key.MeasurementKey` and `ValueSchemaName` as `org.radarcns.application.ApplicationRecordCounts`.
 
-Lets call our custom `RecordConverter` as `CountsStatusRecordConverter`. The implementation can be as simple as below.
-```java
-/**
- * RecordConverter to convert a StatusCounts record to a MongoDB Document.
- */
-public class CountsStatusRecordConverter implements RecordConverter {
-
-    /**
-     * Returns the list of supported schemas, which behaves as the id to select suitable
-     * RecordConverter for a SinkRecord.
-     *
-     * @return a list of supported Schemas
-     */
-    @Override
-    public Collection<String> supportedSchemaNames() {
-        return Collections.singleton("org.radarcns.key.MeasurementKey" + "-"
-                + "org.radarcns.application.ApplicationRecordCounts");
+1. Implement a custom RecordConverter. An example is given below. Consider a record consisting `key-schema` 
+    
+    ```json
+    {
+      "namespace": "org.radarcns.key",
+      "type": "record",
+      "name": "MeasurementKey",
+      "doc": "Measurement key in the RADAR-CNS project",
+      "fields": [
+        {"name": "userId", "type": "string", "doc": "user ID"},
+        {"name": "sourceId", "type": "string", "doc": "device source ID"}
+      ]
     }
+    ```
+    and a `value-schema` as below.
 
-    /**
-     * Converts a ServerStatus SinkRecord into a MongoDB Document.
-     *
-     * @param sinkRecord record to be converted
-     * @return converted MongoDB Document to write
-     */
-    @Override
-    public Document convert(SinkRecord sinkRecord) throws DataException {
-
-        Struct key = (Struct) sinkRecord.key();
-        Struct value = (Struct) sinkRecord.value();
-
-        return new Document("_id", key.get("userId") + "-" + key.get("sourceId"))
-                .append("user", key.getString("userId"))
-                .append("source", key.getString("sourceId"))
-                .append("recordsCached", value.getInt32("recordsCached"))
-                .append("recordsSent", value.getInt32("recordsSent"))
-                .append("timestamp", Converter.toDateTime(value.get("timeReceived")));
+    ```json
+    {
+      "namespace": "org.radarcns.application",
+      "type": "record",
+      "name": "ApplicationRecordCounts",
+      "doc": "Number of records cached or created.",
+      "fields": [
+        {"name": "time", "type": "double", "doc": "device timestamp in UTC (s)"},
+        {"name": "timeReceived", "type": "double", "doc": "device receiver timestamp in UTC (s)"},
+        {"name": "recordsCached", "type": "int", "doc": "number of records currently being cached", "default": -1},
+        {"name": "recordsSent", "type": "int", "doc": "number of records sent since application start"},
+        {"name": "recordsUnsent", "type": "int", "doc": "number of unsent records", "default": -1}
+      ]
     }
-}
-```
+    ```
+    These samples would give us the `KeySchemaName` as `org.radarcns.key.MeasurementKey` and `ValueSchemaName` as `org.radarcns.application.ApplicationRecordCounts`. Lets call our custom `RecordConverter` as `CountsStatusRecordConverter`. The implementation can be as simple as below.
+    ```java
+    /**
+     * RecordConverter to convert a StatusCounts record to a MongoDB Document.
+     */
+    public class CountsStatusRecordConverter implements RecordConverter {
+    
+        /**
+         * Returns the list of supported schemas, which behaves as the id to select suitable
+         * RecordConverter for a SinkRecord.
+         *
+         * @return a list of supported Schemas
+         */
+        @Override
+        public Collection<String> supportedSchemaNames() {
+            return Collections.singleton("org.radarcns.key.MeasurementKey" + "-"
+                    + "org.radarcns.application.ApplicationRecordCounts");
+        }
+    
+        /**
+         * Converts a ServerStatus SinkRecord into a MongoDB Document.
+         *
+         * @param sinkRecord record to be converted
+         * @return converted MongoDB Document to write
+         */
+        @Override
+        public Document convert(SinkRecord sinkRecord) throws DataException {
+    
+            Struct key = (Struct) sinkRecord.key();
+            Struct value = (Struct) sinkRecord.value();
+    
+            return new Document("_id", key.get("userId") + "-" + key.get("sourceId"))
+                    .append("user", key.getString("userId"))
+                    .append("source", key.getString("sourceId"))
+                    .append("recordsCached", value.getInt32("recordsCached"))
+                    .append("recordsSent", value.getInt32("recordsSent"))
+                    .append("timestamp", Converter.toDateTime(value.get("timeReceived")));
+        }
+    }
+    ```
 2. Register implemented `RecordConverter` to an extended `RecordConverterFactory`.
-```java
 
-package org.radarcns.sink.mongodb.example;
-/**
- * Extended RecordConverterFactory to allow customized RecordConverter class that are needed
- */
-public class RecordConverterFactoryExample extends RecordConverterFactory {
-
+    ```java
+    package org.radarcns.sink.mongodb.example;
     /**
-     * Overrides genericConverter to append custom RecordConverter class to RecordConverterFactory
-     *
-     * @return list of RecordConverters available
+     * Extended RecordConverterFactory to allow customized RecordConverter class that are needed
      */
-    protected List<RecordConverter> genericConverters() {
-        List<RecordConverter> recordConverters = new ArrayList<RecordConverter>();
-        recordConverters.addAll(super.genericConverters());
-        recordConverters.add(new CountsStatusRecordConverter());
-        return recordConverters;
+    public class RecordConverterFactoryExample extends RecordConverterFactory {
+    
+        /**
+         * Overrides genericConverter to append custom RecordConverter class to RecordConverterFactory
+         *
+         * @return list of RecordConverters available
+         */
+        protected List<RecordConverter> genericConverters() {
+            List<RecordConverter> recordConverters = new ArrayList<RecordConverter>();
+            recordConverters.addAll(super.genericConverters());
+            recordConverters.add(new CountsStatusRecordConverter());
+            return recordConverters;
+        }
+    
     }
-
-}
-```
+    ```
 3. Use extended `RecordConverterFactoryExample` in `sink.properties`
-```ini
+
+    ```ini
     # Factory class to do the actual record conversion
     record.converter.class=org.radarcns.sink.mongodb.example.RecordConverterFactoryExample
-```
+    ```
 A working example of extended MongoDb-Sink-Connector can be found [here](https://github.com/RADAR-CNS/RADAR-MongoDB-Sink-Connector). 
 
-### Tuning
+### Notes
+
 The only available setting is the number of records returned in a single call to `poll()` (i.e. `consumer.max.poll.records` param inside `standalone.properties`)
 
-### Note
 Connectors can be run inside any machine where Kafka has been installed. Therefore, you can fire them also inside a machine that does not host a Kafka broker.
 
-## Reset
 To reset a connector running in `standalone mode` you have to stop it and then modify `name` and `offset.storage.file.filename` respectively inside `sink.properties` and `standalone.properties`
 
 ## Contributing
+
 All of the contribution code should be formatted using the [Google Java Code Style Guide](https://google.github.io/styleguide/javaguide.html).
 If you want to contribute a feature or fix browse our [issues](https://github.com/RADAR-CNS/RADAR-MongoDB-Sink-Connector/issues), and please make a pull request.

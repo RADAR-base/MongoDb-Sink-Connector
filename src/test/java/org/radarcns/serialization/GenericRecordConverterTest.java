@@ -16,7 +16,7 @@
 
 package org.radarcns.serialization;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Schema;
@@ -28,9 +28,6 @@ import org.bson.Document;
 import org.junit.Before;
 import org.junit.Test;
 
-/**
- * Created by joris on 08/02/2017.
- */
 public class GenericRecordConverterTest {
 
     private GenericRecordConverter converter;
@@ -44,23 +41,21 @@ public class GenericRecordConverterTest {
 
     @Test
     public void convertString() throws Exception {
+        expected.put("value", new BsonString("mystring"));
+
         SinkRecord record = new SinkRecord(null, 0, null, null,
                 SchemaBuilder.string().build(), "mystring", 0L);
-        Document result = converter.convert(record);
-
-        expected.put("value", new BsonString("mystring"));
-        assertEquals(expected, result);
+        assertEquals(expected, converter.convert(record));
     }
 
     @Test
     public void convertIntString() {
-        SinkRecord record = new SinkRecord(null, 0, SchemaBuilder.int32().build(), 10,
-                SchemaBuilder.string().build(), "mystring", 0L);
-        Document result = converter.convert(record);
-
         expected.put("_id", "10");
         expected.put("value", new BsonString("mystring"));
-        assertEquals(expected, result);
+
+        SinkRecord record = new SinkRecord(null, 0, SchemaBuilder.int32().build(), 10,
+                SchemaBuilder.string().build(), "mystring", 0L);
+        assertEquals(expected, converter.convert(record));
     }
 
     @Test
@@ -81,12 +76,11 @@ public class GenericRecordConverterTest {
         value.put("c", "mystring");
         value.put("d", 30);
 
-        SinkRecord record = new SinkRecord(null, 0, keySchema, key, valueSchema, value, 0L);
-        Document result = converter.convert(record);
-
         expected.put("_id", "{10-true}");
         expected.put("c", new BsonString("mystring"));
         expected.put("d", new BsonInt32(30));
-        assertEquals(expected, result);
+
+        SinkRecord record = new SinkRecord(null, 0, keySchema, key, valueSchema, value, 0L);
+        assertEquals(expected, converter.convert(record));
     }
 }

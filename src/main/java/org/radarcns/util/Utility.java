@@ -16,33 +16,19 @@
 
 package org.radarcns.util;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
-import org.apache.kafka.connect.data.Struct;
-import org.bson.BsonDouble;
-import org.bson.Document;
 
-public class Utility {
+public final class Utility {
+    private Utility() {
+        // utility class
+    }
+
     public static String convertConfigToString(Map<String, String> map) {
-        String ret = "User configuration are: ";
+        StringBuilder ret = new StringBuilder(25 + map.size() * 30);
+        ret.append("User configuration are: ");
         for (Map.Entry<String, String> entry : map.entrySet()) {
-            ret += "\n\t" + entry.getKey() + ": " + entry.getValue();
+            ret.append("\n\t").append(entry.getKey()).append(": ").append(entry.getValue());
         }
-        return ret;
-    }
-
-    public static List<Document> extractQuartile(List<Double> component) {
-        return Arrays.asList(
-                new Document("25", new BsonDouble(component.get(0))),
-                new Document("50", new BsonDouble(component.get(1))),
-                new Document("75", new BsonDouble(component.get(2))));
-    }
-
-    public static String intervalKeyToMongoKey(Struct key) {
-        return key.get("userID")
-                + "-" + key.get("sourceID")
-                + "-" + key.get("start")
-                + "-" + key.get("end");
+        return ret.toString();
     }
 }

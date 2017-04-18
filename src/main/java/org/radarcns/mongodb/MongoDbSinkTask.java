@@ -48,8 +48,8 @@ import org.slf4j.LoggerFactory;
  */
 public class MongoDbSinkTask extends SinkTask {
     private static final Logger log = LoggerFactory.getLogger(MongoDbSinkTask.class);
-    private Monitor monitor;
-    private DurationTimer actionTimer;
+    private final Monitor monitor;
+    private final DurationTimer actionTimer;
     private final Map<TopicPartition, Long> latestOffsetPut;
 
     private BlockingQueue<SinkRecord> buffer;
@@ -110,49 +110,51 @@ public class MongoDbSinkTask extends SinkTask {
 
     @Override
     public void put(Collection<SinkRecord> sinkRecords) {
-        if(writer !=null) {
-            if (log.isDebugEnabled()) {
-                log.debug("Init put");
-                actionTimer.reset();
-            }
+        if (writer == null) {
+            return;
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("Init put");
+            actionTimer.reset();
+        }
 
-            for (SinkRecord record : sinkRecords) {
-                TopicPartition partition = new TopicPartition(record.topic(),
-                        record.kafkaPartition());
-                latestOffsetPut.put(partition, record.kafkaOffset());
-                buffer.add(record);
-                monitor.increment();
-
-                if (log.isDebugEnabled()) {
-                    log.debug("{} --> {}", partition, record.kafkaOffset());
-                }
-            }
+        for (SinkRecord record : sinkRecords) {
+            TopicPartition partition = new TopicPartition(record.topic(),
+                    record.kafkaPartition());
+            latestOffsetPut.put(partition, record.kafkaOffset());
+            buffer.add(record);
+            monitor.increment();
 
             if (log.isDebugEnabled()) {
-                log.debug("[PUT] Time elapsed: {} s", actionTimer.duration());
-                log.debug("End put");
+                log.debug("{} --> {}", partition, record.kafkaOffset());
             }
+        }
+
+        if (log.isDebugEnabled()) {
+            log.debug("[PUT] Time elapsed: {} s", actionTimer.duration());
+            log.debug("End put");
         }
     }
 
     @Override
     public void flush(Map<TopicPartition, OffsetAndMetadata> offsets) {
-        if(writer !=null) {
-            log.debug("Init flush");
-            actionTimer.reset();
-
-            Map<TopicPartition, Long> offsetsPut = new HashMap<>();
-            for (TopicPartition partition : offsets.keySet()) {
-                Long offset = latestOffsetPut.get(partition);
-                if (offset != null) {
-                    offsetsPut.put(partition, offset);
-                }
-            }
-            writer.flush(offsetsPut);
-
-            log.info("[FLUSH] Time elapsed: {} s", actionTimer.duration());
-            log.debug("End flush");
+        if (writer == null) {
+            return;
         }
+        log.debug("Init flush");
+        actionTimer.reset();
+
+        Map<TopicPartition, Long> offsetsPut = new HashMap<>();
+        for (TopicPartition partition : offsets.keySet()) {
+            Long offset = latestOffsetPut.get(partition);
+            if (offset != null) {
+                offsetsPut.put(partition, offset);
+            }
+        }
+        writer.flush(offsetsPut);
+
+        log.info("[FLUSH] Time elapsed: {} s", actionTimer.duration());
+        log.debug("End flush");
     }
 
     @Override
@@ -160,6 +162,7 @@ public class MongoDbSinkTask extends SinkTask {
         log.info("Stopping MongoDBSinkTask");
         if (writer != null) {
             writer.close();
+            writer = null;
         }
         if (writerThread != null) {
             writerThread.interrupt();
@@ -168,14 +171,16 @@ public class MongoDbSinkTask extends SinkTask {
             } catch (InterruptedException ex) {
                 log.info("Failed to wait for writer thread to finish.", ex);
             }
+            writerThread = null;
         }
-        timerThread.cancel();
-
+        if (timerThread != null) {
+            timerThread.cancel();
+            timerThread = null;
+        }
+        if (buffer != null) {
+            buffer = null;
+        }
         //clean initialized resources
-        monitor.cancel();
-        monitor = null;
-
-        actionTimer = null;
-        log.info("Stoped MongoDBSinkTask");
+        log.info("Stopped MongoDBSinkTask");
     }
 }
