@@ -9,7 +9,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.1-SNAPSHOT'
+version = '0.1'
 
 targetCompatibility = '1.8'
 sourceCompatibility = '1.8'
