@@ -22,7 +22,7 @@ import org.apache.kafka.common.config.ConfigException;
 /**
  * Validate a class name.
  */
-public class ValidClass implements ConfigDef.Validator {
+public final class ValidClass implements ConfigDef.Validator {
     private final Class<?> superClass;
 
     private ValidClass(Class<?> superClass) {

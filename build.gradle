@@ -9,7 +9,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = '0.1-alpha.1'
+version = '0.1-SNAPSHOT'
 
 targetCompatibility = '1.8'
 sourceCompatibility = '1.8'
@@ -73,9 +73,9 @@ checkstyle {
 }
 
 pmd {
-    ignoreFailures = true
-
     toolVersion = '5.5.2'
+    consoleOutput = true
+
     ruleSets = []
     ruleSetFiles = files("config/pmd/ruleset.xml")
 }

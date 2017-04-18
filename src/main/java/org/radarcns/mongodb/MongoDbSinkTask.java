@@ -28,6 +28,7 @@ import java.util.concurrent.BlockingQueue;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.AbstractConfig;
+import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.errors.IllegalWorkerStateException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
@@ -89,10 +90,19 @@ public class MongoDbSinkTask extends SinkTask {
         writerThread.start();
     }
 
-    // public helper function for easier mocking
+    /**
+     * Helper function to create a {@link MongoDbWriter} instance
+     * @param config object
+     * @param buffer buffer of the records
+     * @param converterFactory of available converters
+     * @param timer for writer
+     * @return a {@link MongoDbWriter} object
+     * @throws ConnectException
+     */
     public MongoDbWriter createMongoDbWriter(AbstractConfig config,
                                       BlockingQueue<SinkRecord> buffer,
-                                      RecordConverterFactory converterFactory, Timer timer) {
+                                      RecordConverterFactory converterFactory, Timer timer)
+            throws ConnectException {
         MongoWrapper mongoHelper = new MongoWrapper(config, null);
 
         return new MongoDbWriter(mongoHelper, buffer, converterFactory, timer);
@@ -100,13 +110,17 @@ public class MongoDbSinkTask extends SinkTask {
 
     @Override
     public void put(Collection<SinkRecord> sinkRecords) {
+        if (writer == null) {
+            return;
+        }
         if (log.isDebugEnabled()) {
             log.debug("Init put");
             actionTimer.reset();
         }
 
         for (SinkRecord record : sinkRecords) {
-            TopicPartition partition = new TopicPartition(record.topic(), record.kafkaPartition());
+            TopicPartition partition = new TopicPartition(record.topic(),
+                    record.kafkaPartition());
             latestOffsetPut.put(partition, record.kafkaOffset());
             buffer.add(record);
             monitor.increment();
@@ -124,6 +138,9 @@ public class MongoDbSinkTask extends SinkTask {
 
     @Override
     public void flush(Map<TopicPartition, OffsetAndMetadata> offsets) {
+        if (writer == null) {
+            return;
+        }
         log.debug("Init flush");
         actionTimer.reset();
 
@@ -142,13 +159,28 @@ public class MongoDbSinkTask extends SinkTask {
 
     @Override
     public void stop() {
-        writer.close();
-        writerThread.interrupt();
-        timerThread.cancel();
-        try {
-            writerThread.join(30_000L);
-        } catch (InterruptedException ex) {
-            log.info("Failed to wait for writer thread to finish.", ex);
+        log.info("Stopping MongoDBSinkTask");
+        if (writer != null) {
+            writer.close();
+            writer = null;
         }
+        if (writerThread != null) {
+            writerThread.interrupt();
+            try {
+                writerThread.join(30_000L);
+            } catch (InterruptedException ex) {
+                log.info("Failed to wait for writer thread to finish.", ex);
+            }
+            writerThread = null;
+        }
+        if (timerThread != null) {
+            timerThread.cancel();
+            timerThread = null;
+        }
+        if (buffer != null) {
+            buffer = null;
+        }
+        //clean initialized resources
+        log.info("Stopped MongoDBSinkTask");
     }
 }

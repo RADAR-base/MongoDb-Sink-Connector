@@ -17,12 +17,9 @@ after_script:
 
 deploy:
   provider: releases
-  api_key:
-    secure: ${GH_TOKEN}
-  file:
-    - build/libs/kafka-connect-mongodb-sink-${TRAVIS_TAG}.jar
-    - build/libs/kafka-connect-mongodb-sink-${TRAVIS_TAG}-javadoc.jar
-    - build/libs/kafka-connect-mongodb-sink-${TRAVIS_TAG}-sources.jar
+  api_key: ${GH_TOKEN}
+  file_glob: true
+  file: "build/libs/kafka-connect-mongodb-sink-*.jar"
   skip_cleanup: true
   on:
     tags: true

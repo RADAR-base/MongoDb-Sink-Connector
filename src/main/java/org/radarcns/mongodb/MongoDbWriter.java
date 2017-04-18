@@ -142,7 +142,7 @@ public class MongoDbWriter implements Closeable, Runnable {
 
     private synchronized void processedRecord(SinkRecord record, TopicPartition topicPartition) {
         latestOffsets.put(topicPartition,record.kafkaOffset());
-        notify();
+        notifyAll();
     }
 
     private synchronized void setException(Throwable ex) {
@@ -169,23 +169,13 @@ public class MongoDbWriter implements Closeable, Runnable {
             throws ConnectException {
 
         log.debug("Init flush-writer");
-        DurationTimer timer = new DurationTimer();
-
         if (exception != null) {
             log.error("MongoDB writer is in an illegal state");
             throw new ConnectException("MongoDB writer is in an illegal state", exception);
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug("Kafka Offsets: {}", offsets.size());
-            for (TopicPartition partition : offsets.keySet()) {
-                log.debug("{} - {}", partition, offsets.get(partition));
-            }
-            log.debug("LatestOffset: {}", latestOffsets.size());
-            for (TopicPartition partition : latestOffsets.keySet()) {
-                log.debug("{} - {}", partition, latestOffsets.get(partition));
-            }
-        }
+        DurationTimer timer = new DurationTimer();
+        logOffsets(offsets);
 
         List<Map.Entry<TopicPartition, Long>> waiting = new ArrayList<>(offsets.entrySet());
 
@@ -216,6 +206,19 @@ public class MongoDbWriter implements Closeable, Runnable {
             }
         }
         storeOffsets();
+    }
+
+    private void logOffsets(Map<TopicPartition, Long> offsets) {
+        if (log.isDebugEnabled()) {
+            log.debug("Kafka Offsets: {}", offsets.size());
+            for (TopicPartition partition : offsets.keySet()) {
+                log.debug("{} - {}", partition, offsets.get(partition));
+            }
+            log.debug("LatestOffset: {}", latestOffsets.size());
+            for (TopicPartition partition : latestOffsets.keySet()) {
+                log.debug("{} - {}", partition, latestOffsets.get(partition));
+            }
+        }
     }
 
     private void storeOffsets() {
