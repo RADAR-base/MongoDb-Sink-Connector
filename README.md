@@ -321,7 +321,7 @@ For example, `kafka_${topic}` for the topic `orders` will map to the collection 
 
 ## Developer guide 
 
-This `MongoDB-Sink-Connector` works based on `RecordConverter`s to convert a `SinkRecord` to a `Document`. The default [RecordConverter](https://github.com/RADAR-CNS/MongoDb-Sink-Connector/blob/master/src/main/java/org/radarcns/serialization/RecordConverter.java) is [GenericRecordConverter](https://github.com/RADAR-CNS/MongoDb-Sink-Connector/blob/dev/src/main/java/org/radarcns/serialization/GenericRecordConverter.java), which converts a record-key as `_id` and adds a field for every field-name from record-value. The `GenericRecordConverter` supports conversion of most of the primitive types and collections.
+This `MongoDB-Sink-Connector` works based on `RecordConverter`s to convert a `SinkRecord` to a `Document`. The default [RecordConverter](https://github.com/RADAR-CNS/MongoDb-Sink-Connector/blob/master/src/main/java/org/radarcns/serialization/RecordConverter.java) is [GenericRecordConverter](https://github.com/RADAR-CNS/MongoDb-Sink-Connector/blob/master/src/main/java/org/radarcns/serialization/GenericRecordConverter.java), which converts a record-key as `_id` and adds a field for every field-name from record-value. The `GenericRecordConverter` supports conversion of most of the primitive types and collections.
 
 For Avro records with complex schemas, or for custom collection format it is recommended to write your own `RecordConverter` and register it to an extended `RecordConverterFactory`. Writing a custom `RecordConverter` is relatively straight forward. The interface requires two methods to be implemented.
 ```java
