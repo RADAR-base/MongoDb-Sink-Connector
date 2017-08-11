@@ -16,3 +16,4 @@ log/
 
 # Build
 /build/
+/out/

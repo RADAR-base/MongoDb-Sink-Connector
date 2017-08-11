@@ -22,6 +22,12 @@ import org.apache.kafka.common.config.ConfigException;
 public class NotEmptyString implements ConfigDef.Validator {
     @Override
     public void ensureValid(String name, Object value) {
+        if (value == null) {
+            throw new ConfigException(name, null, "Null");
+        }
+        if (!(value instanceof String)) {
+            throw new ConfigException(name, value, "Not a string");
+        }
         if (((String)value).trim().isEmpty()) {
             throw new ConfigException(name, value, "String may not be empty");
         }
