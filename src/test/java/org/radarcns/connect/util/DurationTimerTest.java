@@ -14,25 +14,21 @@
  * limitations under the License.
  */
 
-package org.radarcns.util;
+package org.radarcns.connect.util;
 
-/**
- * Measure the duration of an action. Not thread-safe.
- */
-public class DurationTimer {
-    private long nanoTime;
+import static org.junit.Assert.assertTrue;
 
-    public DurationTimer() {
-        reset();
-    }
+import org.junit.Test;
 
-    /** Reset the timer to zero. */
-    public final void reset() {
-        nanoTime = System.nanoTime();
-    }
-
-    /** Duration since creation or last reset, in seconds. */
-    public double duration() {
-        return (System.nanoTime() - nanoTime) / 1_000_000_000d;
+public class DurationTimerTest {
+    @Test
+    public void duration() throws Exception {
+        DurationTimer timer = new DurationTimer();
+        assertTrue(timer.duration() < 0.01d);
+        Thread.sleep(100L);
+        assertTrue(timer.duration() > 0.1d);
+        assertTrue(timer.duration() > 0.1d);
+        timer.reset();
+        assertTrue(timer.duration() < 0.01d);
     }
 }

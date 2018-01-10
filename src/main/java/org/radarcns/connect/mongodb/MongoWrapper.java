@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package org.radarcns.mongodb;
+package org.radarcns.connect.mongodb;
 
 import static com.mongodb.client.model.Filters.eq;
-import static org.radarcns.mongodb.MongoDbSinkConnector.COLLECTION_FORMAT;
-import static org.radarcns.mongodb.MongoDbSinkConnector.MONGO_DATABASE;
-import static org.radarcns.mongodb.MongoDbSinkConnector.MONGO_HOST;
-import static org.radarcns.mongodb.MongoDbSinkConnector.MONGO_PASSWORD;
-import static org.radarcns.mongodb.MongoDbSinkConnector.MONGO_PORT;
-import static org.radarcns.mongodb.MongoDbSinkConnector.MONGO_USERNAME;
+import static org.radarcns.connect.mongodb.MongoDbSinkConnector.COLLECTION_FORMAT;
+import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_DATABASE;
+import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_HOST;
+import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_PASSWORD;
+import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_PORT;
+import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_USERNAME;
 
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;

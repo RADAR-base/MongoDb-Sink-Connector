@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.radarcns.mongodb;
+package org.radarcns.connect.mongodb;
 
 import static org.apache.kafka.common.config.ConfigDef.Importance.HIGH;
 import static org.apache.kafka.common.config.ConfigDef.Importance.LOW;
@@ -33,10 +33,10 @@ import org.apache.kafka.common.config.ConfigValue;
 import org.apache.kafka.common.utils.AppInfoParser;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.sink.SinkConnector;
-import org.radarcns.serialization.RecordConverterFactory;
-import org.radarcns.util.NotEmptyString;
-import org.radarcns.util.Utility;
-import org.radarcns.util.ValidClass;
+import org.radarcns.connect.mongodb.serialization.RecordConverterFactory;
+import org.radarcns.connect.util.NotEmptyString;
+import org.radarcns.connect.util.Utility;
+import org.radarcns.connect.util.ValidClass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.radarcns.mongodb;
+package org.radarcns.connect.mongodb;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -38,9 +38,9 @@ import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.bson.Document;
 import org.junit.Test;
-import org.radarcns.serialization.RecordConverter;
-import org.radarcns.serialization.RecordConverterFactory;
-import org.radarcns.util.Monitor;
+import org.radarcns.connect.mongodb.serialization.RecordConverter;
+import org.radarcns.connect.mongodb.serialization.RecordConverterFactory;
+import org.radarcns.connect.util.Monitor;
 
 public class MongoDbWriterTest {
 

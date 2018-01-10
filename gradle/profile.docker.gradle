@@ -1,5 +1,10 @@
-task downloadDependencies(type: Exec) {
+task downloadDependencies {
     configurations.compileClasspath.files
     configurations.runtimeClasspath.files
-    commandLine 'echo', 'Downloaded all dependencies'
+    println 'Downloaded all dependencies'
+}
+
+task copyDependencies(type: Copy, dependsOn: downloadDependencies) {
+    from configurations.runtimeClasspath.files
+    into "${buildDir}/third-party/"
 }

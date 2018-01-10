@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.radarcns.util;
+package org.radarcns.connect.util;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;

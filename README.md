@@ -72,7 +72,7 @@ For example, `kafka_${topic}` for the topic `orders` will map to the collection 
 <tr>
 <td>mongo.username</td><td>Username to connect to MongoDB database. If not set, no credentials are used.</td><td>string</td><td>null</td><td></td><td>medium</td></tr>
 <tr>
-<td>record.converter.class</td><td>RecordConverterFactory that returns classes to convert Kafka SinkRecords to BSON documents.</td><td>class</td><td>class org.radarcns.serialization.RecordConverterFactory</td><td></td><td>medium</td></tr>
+<td>record.converter.class</td><td>RecordConverterFactory that returns classes to convert Kafka SinkRecords to BSON documents.</td><td>class</td><td>class org.radarcns.connect.mongodb.serialization.RecordConverterFactory</td><td></td><td>medium</td></tr>
 <tr>
 <td>buffer.capacity</td><td>Maximum number of items in a MongoDB writer buffer. Once the buffer becomes full,the task fails.</td><td>int</td><td>20000</td><td>[1,...]</td><td>low</td></tr>
 <tr>
@@ -86,7 +86,7 @@ For example, `kafka_${topic}` for the topic `orders` will map to the collection 
     name=kafka-connector-mongodb-sink
     
     # Kafka connector configuration
-    connector.class=org.radarcns.mongodb.MongoDbSinkConnector
+    connector.class=org.radarcns.connect.mongodb.MongoDbSinkConnector
     tasks.max=1
     
     # Topics that will be consumed
@@ -105,7 +105,7 @@ For example, `kafka_${topic}` for the topic `orders` will map to the collection 
     #mongo.collection.format={$topic}
     
     # Factory class to do the actual record conversion
-    record.converter.class=org.radarcns.serialization.RecordConverterFactory
+    record.converter.class=org.radarcns.connect.mongodb.serialization.RecordConverterFactory
     ```
     
 - Run the MongoDB-Sink-Connector in 
@@ -199,36 +199,36 @@ For example, `kafka_${topic}` for the topic `orders` will map to the collection 
     [2017-04-14 15:23:36,942] INFO REST server listening at http://127.0.1.1:8083/, advertising URL http://127.0.1.1:8083/ (org.apache.kafka.connect.runtime.rest.RestServer:150)
     [2017-04-14 15:23:36,942] INFO Kafka Connect started (org.apache.kafka.connect.runtime.Connect:58)
     [2017-04-14 15:23:36,945] INFO ConnectorConfig values: 
-            connector.class = org.radarcns.mongodb.MongoDbSinkConnector
+            connector.class = org.radarcns.connect.mongodb.MongoDbSinkConnector
             tasks.max = 1
             name = kafka-connector-mongodb-sink
      (org.apache.kafka.connect.runtime.ConnectorConfig:178)
-    [2017-04-14 15:23:36,955] INFO Creating connector kafka-connector-mongodb-sink of type org.radarcns.mongodb.MongoDbSinkConnector (org.apache.kafka.connect.runtime.Worker:168)
-    [2017-04-14 15:23:36,957] INFO Instantiated connector kafka-connector-mongodb-sink with version 0.10.0.1-cp1 of type org.radarcns.mongodb.MongoDbSinkConnector (org.apache.kafka.connect.runtime.Worker:176)
+    [2017-04-14 15:23:36,955] INFO Creating connector kafka-connector-mongodb-sink of type org.radarcns.connect.mongodb.MongoDbSinkConnector (org.apache.kafka.connect.runtime.Worker:168)
+    [2017-04-14 15:23:36,957] INFO Instantiated connector kafka-connector-mongodb-sink with version 0.10.0.1-cp1 of type org.radarcns.connect.mongodb.MongoDbSinkConnector (org.apache.kafka.connect.runtime.Worker:176)
     [2017-04-14 15:23:36,959] INFO User configuration are: 
             mongo.port: 27017
-            connector.class: org.radarcns.mongodb.MongoDbSinkConnector
+            connector.class: org.radarcns.connect.mongodb.MongoDbSinkConnector
             mongo.password: ***
             mongo.database: mongodb-database
-            record.converter.class: org.radarcns.serialization.RecordConverterFactory
+            record.converter.class: org.radarcns.connect.mongodb.serialization.RecordConverterFactory
             mongo.username: mongodb-username
             mongo.host: localhost
             topics: avrotest
             tasks.max: 1
-            name: kafka-connector-mongodb-sink (org.radarcns.mongodb.MongoDbSinkConnector:116)
+            name: kafka-connector-mongodb-sink (org.radarcns.connect.mongodb.MongoDbSinkConnector:116)
     [2017-04-14 15:23:36,961] INFO Finished creating connector kafka-connector-mongodb-sink (org.apache.kafka.connect.runtime.Worker:181)
     [2017-04-14 15:23:36,961] INFO SinkConnectorConfig values: 
-            connector.class = org.radarcns.mongodb.MongoDbSinkConnector
+            connector.class = org.radarcns.connect.mongodb.MongoDbSinkConnector
             tasks.max = 1
             topics = [avrotest]
             name = kafka-connector-mongodb-sink
      (org.apache.kafka.connect.runtime.SinkConnectorConfig:178)
-    [2017-04-14 15:23:36,963] INFO At most 1 will be started (org.radarcns.mongodb.MongoDbSinkConnector:126)
+    [2017-04-14 15:23:36,963] INFO At most 1 will be started (org.radarcns.connect.mongodb.MongoDbSinkConnector:126)
     [2017-04-14 15:23:36,971] INFO TaskConfig values: 
-            task.class = class org.radarcns.mongodb.MongoDbSinkTask
+            task.class = class org.radarcns.connect.mongodb.MongoDbSinkTask
      (org.apache.kafka.connect.runtime.TaskConfig:178)
     [2017-04-14 15:23:36,972] INFO Creating task kafka-connector-mongodb-sink-0 (org.apache.kafka.connect.runtime.Worker:315)
-    [2017-04-14 15:23:36,972] INFO Instantiated task kafka-connector-mongodb-sink-0 with version 0.10.0.1-cp1 of type org.radarcns.mongodb.MongoDbSinkTask (org.apache.kafka.connect.runtime.Worker:326)
+    [2017-04-14 15:23:36,972] INFO Instantiated task kafka-connector-mongodb-sink-0 with version 0.10.0.1-cp1 of type org.radarcns.connect.mongodb.MongoDbSinkTask (org.apache.kafka.connect.runtime.Worker:326)
     [2017-04-14 15:23:36,987] INFO ConsumerConfig values: 
             metric.reporters = []
             ...
@@ -254,28 +254,28 @@ For example, `kafka_${topic}` for the topic `orders` will map to the collection 
     [2017-04-14 15:23:37,038] INFO Kafka version : 0.10.0.1-cp1 (org.apache.kafka.common.utils.AppInfoParser:83)
     [2017-04-14 15:23:37,039] INFO Kafka commitId : e7288edd541cee03 (org.apache.kafka.common.utils.AppInfoParser:84)
     [2017-04-14 15:23:37,041] INFO Created connector kafka-connector-mongodb-sink (org.apache.kafka.connect.cli.ConnectStandalone:91)
-    [2017-04-14 15:23:37,042] INFO 0 have been processed (org.radarcns.mongodb.MongoDbSinkTask:56)
+    [2017-04-14 15:23:37,042] INFO 0 have been processed (org.radarcns.connect.mongodb.MongoDbSinkTask:56)
     [2017-04-14 15:23:37,115] INFO Cluster created with settings {hosts=[localhost:27017], mode=SINGLE, requiredClusterType=UNKNOWN, serverSelectionTimeout='30000 ms', maxWaitQueueSize=500} (org.mongodb.driver.cluster:71)
-    [2017-04-14 15:23:37,132] INFO 0 have been written in MongoDB 0 records need to be processed. (org.radarcns.mongodb.MongoDbWriter:58)
+    [2017-04-14 15:23:37,132] INFO 0 have been written in MongoDB 0 records need to be processed. (org.radarcns.connect.mongodb.MongoDbWriter:58)
     [2017-04-14 15:23:37,142] INFO No server chosen by ReadPreferenceServerSelector{readPreference=primary} from cluster description ClusterDescription{type=UNKNOWN, connectionMode=SINGLE, serverDescriptions=[ServerDescription{address=localhost:27017, type=UNKNOWN, state=CONNECTING}]}. Waiting for 30000 ms before timing out (org.mongodb.driver.cluster:71)
     [2017-04-14 15:23:37,413] INFO Opened connection [connectionId{localValue:1, serverValue:5}] to localhost:27017 (org.mongodb.driver.connection:71)
     [2017-04-14 15:23:37,415] INFO Monitor thread successfully connected to server with description ServerDescription{address=localhost:27017, type=STANDALONE, state=CONNECTED, ok=true, version=ServerVersion{versionList=[3, 2, 10]}, minWireVersion=0, maxWireVersion=4, maxDocumentSize=16777216, roundTripTimeNanos=722850} (org.mongodb.driver.cluster:71)
     [2017-04-14 15:23:37,510] INFO Opened connection [connectionId{localValue:2, serverValue:6}] to localhost:27017 (org.mongodb.driver.connection:71)
     [2017-04-14 15:23:37,534] INFO Sink task WorkerSinkTask{id=kafka-connector-mongodb-sink-0} finished initialization and start (org.apache.kafka.connect.runtime.WorkerSinkTask:208)
-    [2017-04-14 15:23:37,534] INFO Started MongoDbWriter (org.radarcns.mongodb.MongoDbWriter:97)
+    [2017-04-14 15:23:37,534] INFO Started MongoDbWriter (org.radarcns.connect.mongodb.MongoDbWriter:97)
     [2017-04-14 15:23:37,687] INFO Discovered coordinator nivethika-XPS-15-9550:9092 (id: 2147483647 rack: null) for group connect-kafka-connector-mongodb-sink. (org.apache.kafka.clients.consumer.internals.AbstractCoordinator:528)
     [2017-04-14 15:23:37,688] INFO Revoking previously assigned partitions [] for group connect-kafka-connector-mongodb-sink (org.apache.kafka.clients.consumer.internals.ConsumerCoordinator:292)
     [2017-04-14 15:23:37,688] INFO (Re-)joining group connect-kafka-connector-mongodb-sink (org.apache.kafka.clients.consumer.internals.AbstractCoordinator:349)
     [2017-04-14 15:23:37,731] INFO Successfully joined group connect-kafka-connector-mongodb-sink with generation 1 (org.apache.kafka.clients.consumer.internals.AbstractCoordinator:457)
     [2017-04-14 15:23:37,732] INFO Setting newly assigned partitions [avrotest-0] for group connect-kafka-connector-mongodb-sink (org.apache.kafka.clients.consumer.internals.ConsumerCoordinator:231)
     [2017-04-14 15:23:42,197] INFO Reflections took 5994 ms to scan 254 urls, producing 12617 keys and 82584 values  (org.reflections.Reflections:229)
-    [2017-04-14 15:24:07,043] INFO 4 have been processed (org.radarcns.mongodb.MongoDbSinkTask:56)
-    [2017-04-14 15:24:07,131] INFO 4 have been written in MongoDB 0 records need to be processed. (org.radarcns.mongodb.MongoDbWriter:58)
-    [2017-04-14 15:24:36,975] INFO [FLUSH-WRITER] Time-elapsed: 3.6946E-5 s (org.radarcns.mongodb.MongoDbWriter:205)
-    [2017-04-14 15:24:36,996] INFO [FLUSH] Time elapsed: 0.020898882 s (org.radarcns.mongodb.MongoDbSinkTask:153)
+    [2017-04-14 15:24:07,043] INFO 4 have been processed (org.radarcns.connect.mongodb.MongoDbSinkTask:56)
+    [2017-04-14 15:24:07,131] INFO 4 have been written in MongoDB 0 records need to be processed. (org.radarcns.connect.mongodb.MongoDbWriter:58)
+    [2017-04-14 15:24:36,975] INFO [FLUSH-WRITER] Time-elapsed: 3.6946E-5 s (org.radarcns.connect.mongodb.MongoDbWriter:205)
+    [2017-04-14 15:24:36,996] INFO [FLUSH] Time elapsed: 0.020898882 s (org.radarcns.connect.mongodb.MongoDbSinkTask:153)
     [2017-04-14 15:24:36,996] INFO WorkerSinkTask{id=kafka-connector-mongodb-sink-0} Committing offsets (org.apache.kafka.connect.runtime.WorkerSinkTask:261)
-    [2017-04-14 15:24:37,043] INFO 2 have been processed (org.radarcns.mongodb.MongoDbSinkTask:56)
-    [2017-04-14 15:24:37,131] INFO 2 have been written in MongoDB 0 records need to be processed. (org.radarcns.mongodb.MongoDbWriter:58)
+    [2017-04-14 15:24:37,043] INFO 2 have been processed (org.radarcns.connect.mongodb.MongoDbSinkTask:56)
+    [2017-04-14 15:24:37,131] INFO 2 have been written in MongoDB 0 records need to be processed. (org.radarcns.connect.mongodb.MongoDbWriter:58)
     ```
 - You can view the data in MongoDB. For the above example you may see results as follows.
 
@@ -425,7 +425,7 @@ public interface RecordConverter {
 2. Register implemented `RecordConverter` to an extended `RecordConverterFactory`.
 
     ```java
-    package org.radarcns.sink.mongodb.example;
+    package org.radarcns.connect.mongodb.example;
     /**
      * Extended RecordConverterFactory to allow customized RecordConverter class that are needed
      */
@@ -449,7 +449,7 @@ public interface RecordConverter {
 
     ```ini
     # Factory class to do the actual record conversion
-    record.converter.class=org.radarcns.sink.mongodb.example.RecordConverterFactoryExample
+    record.converter.class=org.radarcns.connect.mongodb.example.RecordConverterFactoryExample
     ```
 A working example of extended MongoDb-Sink-Connector can be found [here](https://github.com/RADAR-CNS/RADAR-MongoDB-Sink-Connector). 
 

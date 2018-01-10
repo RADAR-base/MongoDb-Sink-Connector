@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.radarcns.mongodb;
+package org.radarcns.connect.mongodb;
 
 import com.mongodb.MongoException;
 import com.mongodb.client.MongoCursor;
@@ -33,10 +33,10 @@ import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.bson.Document;
-import org.radarcns.serialization.RecordConverter;
-import org.radarcns.serialization.RecordConverterFactory;
-import org.radarcns.util.DurationTimer;
-import org.radarcns.util.Monitor;
+import org.radarcns.connect.mongodb.serialization.RecordConverter;
+import org.radarcns.connect.mongodb.serialization.RecordConverterFactory;
+import org.radarcns.connect.util.DurationTimer;
+import org.radarcns.connect.util.Monitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

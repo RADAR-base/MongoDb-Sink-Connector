@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-package org.radarcns.util;
+package org.radarcns.connect.util;
 
-import static org.junit.Assert.assertEquals;
-
-import java.util.Collections;
 import java.util.Map;
-import org.junit.Test;
 
-public class UtilityTest {
-    @Test
-    public void configToString() {
-        Map<String, String> config = Collections.singletonMap("something", "other");
-        String result = Utility.convertConfigToString(config);
-        String[] lines = result.split("\\r?\\n");
-        assertEquals(2, lines.length);
-        assertEquals("\tsomething: other", lines[1]);
+public final class Utility {
+    private Utility() {
+        // utility class
+    }
+
+    public static String convertConfigToString(Map<String, String> map) {
+        StringBuilder ret = new StringBuilder(25 + map.size() * 30);
+        ret.append("User configuration are: ");
+        for (Map.Entry<String, String> entry : map.entrySet()) {
+            ret.append("\n\t").append(entry.getKey()).append(": ").append(entry.getValue());
+        }
+        return ret.toString();
     }
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.radarcns.util;
+package org.radarcns.connect.util;
 
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;
@@ -39,6 +39,9 @@ public final class ValidClass implements ConfigDef.Validator {
 
     @Override
     public void ensureValid(String name, Object obj) {
+        if (obj == null) {
+            return;
+        }
         Class<?> cls = (Class<?>) obj;
         if (!superClass.isAssignableFrom(cls)) {
             throw new ConfigException(name, obj,

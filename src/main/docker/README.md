@@ -22,7 +22,7 @@ Sample MongoDB sink.properties
 name=radar-connector-mongodb-sink
 
 # Kafka connector configuration
-connector.class=org.radarcns.mongodb.MongoDbSinkConnector
+connector.class=org.radarcns.connect.mongodb.MongoDbSinkConnector
 tasks.max=1
 
 # Topics that will be consumed
@@ -42,7 +42,7 @@ mongo.database=mydbase
 #mongo.collection.format={$topic}
 
 # Factory class to do the actual record conversion
-record.converter.class=org.radarcns.sink.mongodb.RecordConverterFactoryRadar
+record.converter.class=org.radarcns.connect.mongodb.RecordConverterFactoryRadar
 ```
 
 ## Runtime environment variables

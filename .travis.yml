@@ -12,17 +12,20 @@ cache:
 
 before_install:
   - ./gradlew downloadDependencies
-after_script:
-  - ./gradlew sendCoverageToCodacy
 
 deploy:
-  provider: releases
-  api_key: ${GH_TOKEN}
-  file_glob: true
-  file: "build/libs/kafka-connect-mongodb-sink-*.jar"
-  skip_cleanup: true
-  on:
-    tags: true
-
-after_deploy:
-  - ./gradlew bintrayUpload
+  - provider: script
+    script: ./gradlew sendCoverageToCodacy
+    skip_cleanup: true
+  - provider: releases
+    api_key: ${GH_TOKEN}
+    file_glob: true
+    file: "build/libs/*.jar"
+    skip_cleanup: true
+    on:
+      tags: true
+  - provider: script
+    script: ./gradlew bintrayUpload
+    skip_cleanup: true
+    on:
+      tags: true

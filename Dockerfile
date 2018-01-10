@@ -24,19 +24,20 @@ RUN ./gradlew --version
 COPY ./gradle/profile.docker.gradle /code/gradle/
 COPY ./build.gradle ./gradle.properties ./settings.gradle /code/
 
-RUN ./gradlew downloadDependencies
+RUN ./gradlew copyDependencies
 
 COPY ./src/ /code/src
 
 RUN ./gradlew jar
 
-FROM confluentinc/cp-kafka-connect:4.0.0
+FROM confluentinc/cp-kafka-connect-base:4.0.0
 
 MAINTAINER Nivethika M <nivethika@thehyve.nl> , Joris B <joris@thehyve.nl>
 
-LABEL description="MongoDB Sink Connector"
+LABEL description="Kafka MongoDB Sink Connector"
 
-COPY --from=builder /code/build/libs/*.jar /etc/kafka-connect/jars/
+COPY --from=builder /code/build/third-party/*.jar /usr/share/java/kafka-connect/plugins/kafka-connect-mongodb-sink/
+COPY --from=builder /code/build/libs/*.jar /usr/share/java/kafka-connect/plugins/kafka-connect-mongodb-sink/
 
 COPY ./src/main/docker/kafka-wait /usr/bin/kafka-wait
 

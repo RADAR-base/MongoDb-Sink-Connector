@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package org.radarcns.mongodb;
+package org.radarcns.connect.mongodb;
 
-import static org.radarcns.mongodb.MongoDbSinkConnector.BUFFER_CAPACITY;
-import static org.radarcns.mongodb.MongoDbSinkConnector.RECORD_CONVERTER;
+import static org.radarcns.connect.mongodb.MongoDbSinkConnector.BUFFER_CAPACITY;
+import static org.radarcns.connect.mongodb.MongoDbSinkConnector.RECORD_CONVERTER;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -32,9 +32,9 @@ import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.errors.IllegalWorkerStateException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
-import org.radarcns.serialization.RecordConverterFactory;
-import org.radarcns.util.DurationTimer;
-import org.radarcns.util.Monitor;
+import org.radarcns.connect.mongodb.serialization.RecordConverterFactory;
+import org.radarcns.connect.util.DurationTimer;
+import org.radarcns.connect.util.Monitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

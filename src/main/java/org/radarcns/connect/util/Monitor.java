@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.radarcns.util;
+package org.radarcns.connect.util;
 
 import java.util.Collection;
 import java.util.TimerTask;

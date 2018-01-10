@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.radarcns.serialization;
+package org.radarcns.connect.mongodb.serialization;
 
 import static org.junit.Assert.assertEquals;
 

@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-package org.radarcns.mongodb;
+package org.radarcns.connect.mongodb;
 
 import static org.apache.kafka.connect.sink.SinkConnector.TOPICS_CONFIG;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
-import static org.radarcns.mongodb.MongoDbSinkConnector.COLLECTION_FORMAT;
-import static org.radarcns.mongodb.MongoDbSinkConnector.CONFIG_DEF;
-import static org.radarcns.mongodb.MongoDbSinkConnector.MONGO_DATABASE;
-import static org.radarcns.mongodb.MongoDbSinkConnector.MONGO_HOST;
-import static org.radarcns.mongodb.MongoDbSinkConnector.MONGO_PASSWORD;
-import static org.radarcns.mongodb.MongoDbSinkConnector.MONGO_PORT;
-import static org.radarcns.mongodb.MongoDbSinkConnector.MONGO_PORT_DEFAULT;
-import static org.radarcns.mongodb.MongoDbSinkConnector.MONGO_USERNAME;
+import static org.radarcns.connect.mongodb.MongoDbSinkConnector.COLLECTION_FORMAT;
+import static org.radarcns.connect.mongodb.MongoDbSinkConnector.CONFIG_DEF;
+import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_DATABASE;
+import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_HOST;
+import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_PASSWORD;
+import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_PORT;
+import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_PORT_DEFAULT;
+import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_USERNAME;
 
 import com.mongodb.MongoClientOptions;
 import com.mongodb.MongoException;
