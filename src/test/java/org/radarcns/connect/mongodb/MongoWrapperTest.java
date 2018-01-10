@@ -17,8 +17,9 @@
 package org.radarcns.connect.mongodb;
 
 import static org.apache.kafka.connect.sink.SinkConnector.TOPICS_CONFIG;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.radarcns.connect.mongodb.MongoDbSinkConnector.COLLECTION_FORMAT;
@@ -34,7 +35,6 @@ import com.mongodb.MongoClientOptions;
 import com.mongodb.MongoException;
 import java.lang.reflect.Field;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.bson.Document;
@@ -66,7 +66,7 @@ public class MongoWrapperTest {
                 .build();
         MongoWrapper wrapper = new MongoWrapper(new AbstractConfig(CONFIG_DEF, configMap), timeout);
 
-        assertThat((List<?>)credentialsField.get(wrapper), empty());
+        assertThat(credentialsField.get(wrapper), is(nullValue()));
         assertFalse(wrapper.checkConnection());
 
         thrown.expect(MongoException.class);
@@ -99,7 +99,7 @@ public class MongoWrapperTest {
                 .build();
         MongoWrapper wrapper = new MongoWrapper(new AbstractConfig(CONFIG_DEF, configMap), timeout);
 
-        assertThat((List<?>)credentialsField.get(wrapper), empty());
+        assertThat(credentialsField.get(wrapper), is(nullValue()));
         assertFalse(wrapper.checkConnection());
 
         thrown.expect(MongoException.class);
@@ -130,7 +130,7 @@ public class MongoWrapperTest {
                 .build();
         MongoWrapper wrapper = new MongoWrapper(new AbstractConfig(CONFIG_DEF, configMap), timeout);
 
-        assertThat((List<?>)credentialsField.get(wrapper), hasSize(1));
+        assertThat(credentialsField.get(wrapper), is(not(nullValue())));
         assertFalse(wrapper.checkConnection());
 
         thrown.expect(MongoException.class);
