@@ -24,8 +24,6 @@ ext.mockitoVersion = '2.2.29'
 
 configurations {
     codacy
-    provided
-    compile.extendsFrom provided
 }
 
 // In this section you declare where to find the dependencies of your project
@@ -41,15 +39,17 @@ repositories {
 // In this section you declare the dependencies for your production and test code
 dependencies {
     // The production code uses the SLF4J logging API at compile time
-    provided group: 'org.slf4j', name:'slf4j-api', version: slf4jVersion
+    compileOnly group: 'org.slf4j', name:'slf4j-api', version: slf4jVersion
 
     // to implement producers and consumers
-    provided group: 'org.apache.kafka', name: 'connect-api', version: kafkaVersion
+    compileOnly group: 'org.apache.kafka', name: 'connect-api', version: kafkaVersion
+
     api group: 'org.mongodb', name: 'mongo-java-driver', version: mongodbVersion
 
     testCompile group: 'junit', name: 'junit', version: junitVersion
-    testCompile group: 'org.hamcrest', name: 'hamcrest-all', version: hamcrestVersion
-    testCompile group: 'org.mockito', name: 'mockito-core', version: mockitoVersion
+    testImplementation group: 'org.hamcrest', name: 'hamcrest-all', version: hamcrestVersion
+    testImplementation group: 'org.mockito', name: 'mockito-core', version: mockitoVersion
+    testImplementation group: 'org.apache.kafka', name: 'connect-api', version: kafkaVersion
     testRuntimeOnly group: 'org.slf4j', name: 'slf4j-simple', version: slf4jVersion
 
     codacy 'com.github.codacy:codacy-coverage-reporter:1.0.10'
@@ -60,11 +60,6 @@ jar {
     manifest {
         attributes 'Implementation-Title': 'RADAR-CNS MongoDB connector',
                 'Implementation-Version': version
-    }
-    from {
-        (configurations.runtime - configurations.provided).collect {
-            it.isDirectory() ? it : zipTree(it)
-        }
     }
 }
 
