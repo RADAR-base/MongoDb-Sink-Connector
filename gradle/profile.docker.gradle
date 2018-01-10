@@ -1,0 +1,7 @@
+task downloadDependencies {
+    configurations.compileClasspath.files
+    configurations.runtimeClasspath.files
+    doLast {
+        println 'Downloaded code dependencies'
+    }
+}

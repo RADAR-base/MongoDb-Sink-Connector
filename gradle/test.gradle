@@ -1,0 +1,11 @@
+ext.junitVersion = '4.12'
+ext.hamcrestVersion = '1.3'
+ext.mockitoVersion = '2.2.29'
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: junitVersion
+    testImplementation group: 'org.hamcrest', name: 'hamcrest-all', version: hamcrestVersion
+    testImplementation group: 'org.mockito', name: 'mockito-core', version: mockitoVersion
+    testImplementation group: 'org.apache.kafka', name: 'connect-api', version: kafkaVersion
+    testRuntimeOnly group: 'org.slf4j', name: 'slf4j-simple', version: slf4jVersion
+}
