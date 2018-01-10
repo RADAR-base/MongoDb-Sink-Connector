@@ -58,7 +58,7 @@ public class MongoDbSinkConnector extends SinkConnector {
     public static final String COLLECTION_FORMAT = "mongo.collection.format";
     public static final String RECORD_CONVERTER = "record.converter.class";
 
-    private static final ConfigDef CONFIG_DEF = new ConfigDef()
+    static final ConfigDef CONFIG_DEF = new ConfigDef()
             .define(MONGO_HOST, Type.STRING, NO_DEFAULT_VALUE, new NotEmptyString(), HIGH,
                 "MongoDB host name to write data to", MONGO_GROUP, 0, ConfigDef.Width.MEDIUM,
                 "MongoDB hostname")

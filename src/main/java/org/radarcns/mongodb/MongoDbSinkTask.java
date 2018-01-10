@@ -73,7 +73,7 @@ public class MongoDbSinkTask extends SinkTask {
         timerThread = new Timer();
         timerThread.schedule(monitor, 0, 30_000);
 
-        AbstractConfig config = new AbstractConfig(
+        AbstractConfig config = new AbstractConfig(MongoDbSinkConnector.CONFIG_DEF,
                 new MongoDbSinkConnector().config().parse(props));
 
         buffer = new ArrayBlockingQueue<>(config.getInt(BUFFER_CAPACITY));
