@@ -47,3 +47,10 @@ if (!hasProperty('profile')) {
 }
 
 apply from: "gradle/profile.${profile}.gradle"
+
+task copyDependencies(type: Copy) {
+    from configurations.runtimeClasspath.files
+    into "${buildDir}/third-party/"
+}
+
+assemble.dependsOn copyDependencies

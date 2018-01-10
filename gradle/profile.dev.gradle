@@ -3,10 +3,15 @@ apply from: 'gradle/style.gradle'
 apply from: 'gradle/publishing.gradle'
 apply from: 'gradle/codacy.gradle'
 
-task downloadDependencies(type: Exec) {
-    configurations.compileClasspath.files
-    configurations.testRuntimeClasspath.files
-    configurations.codacy.files
-    configurations.jacocoAnt.files
-    commandLine 'echo', 'Downloaded all dependencies'
+task downloadDependencies {
+    description "Download dependencies"
+    doLast {
+        configurations.getAsMap().each { name, config ->
+            try {
+                config.files
+            } catch (e) {
+                project.logger.info e.message // some cannot be resolved, silentlyish skip them
+            }
+        }
+    }
 }

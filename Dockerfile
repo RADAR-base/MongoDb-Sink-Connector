@@ -24,7 +24,7 @@ RUN ./gradlew --version
 COPY ./gradle/profile.docker.gradle /code/gradle/
 COPY ./build.gradle ./gradle.properties ./settings.gradle /code/
 
-RUN ./gradlew copyDependencies
+RUN ./gradlew downloadDependencies copyDependencies
 
 COPY ./src/ /code/src
 

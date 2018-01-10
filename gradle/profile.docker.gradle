@@ -2,11 +2,6 @@ task downloadDependencies {
     configurations.compileClasspath.files
     configurations.runtimeClasspath.files
     doLast {
-        println 'Downloaded all dependencies'
+        println 'Downloaded code dependencies'
     }
-}
-
-task copyDependencies(type: Copy, dependsOn: downloadDependencies) {
-    from configurations.runtimeClasspath.files
-    into "${buildDir}/third-party/"
 }
