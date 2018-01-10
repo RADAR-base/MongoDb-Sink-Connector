@@ -48,7 +48,7 @@ import org.slf4j.LoggerFactory;
 public class MongoWrapper implements Closeable {
     private final Logger log = LoggerFactory.getLogger(MongoWrapper.class);
     private final MongoClient mongoClient;
-    private final List<MongoCredential> credentials;
+    private final MongoCredential credentials;
     private final String collectionFormat;
     private final MongoDatabase database;
 
@@ -66,14 +66,13 @@ public class MongoWrapper implements Closeable {
         database = mongoClient.getDatabase(dbName);
     }
 
-    private List<MongoCredential> createCredentials(AbstractConfig config, String dbName) {
+    private MongoCredential createCredentials(AbstractConfig config, String dbName) {
         String userName = config.getString(MONGO_USERNAME);
         String password = config.getString(MONGO_PASSWORD);
         if (isValid(userName) && isValid(password)) {
-            return Collections.singletonList(
-                    MongoCredential.createCredential(userName, dbName, password.toCharArray()));
+            return MongoCredential.createCredential(userName, dbName, password.toCharArray());
         } else {
-            return Collections.emptyList();
+            return null;
         }
     }
 
@@ -92,7 +91,12 @@ public class MongoWrapper implements Closeable {
             } else {
                 actualOptions = new MongoClientOptions.Builder().build();
             }
-            return new MongoClient(new ServerAddress(host, port), credentials, actualOptions);
+            ServerAddress server = new ServerAddress(host, port);
+            if (credentials != null) {
+                return new MongoClient(server, credentials, actualOptions);
+            } else {
+                return new MongoClient(server, actualOptions);
+            }
         } catch (MongoException ex) {
             log.error("Failed to create MongoDB client to {}:{} with credentials {}", host, port,
                     credentials, ex);

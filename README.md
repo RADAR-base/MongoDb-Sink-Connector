@@ -1,20 +1,52 @@
-# MongoDb-Sink-Connector
+# Kafka MongoDb Sink Connector
 
 [![Build Status](https://travis-ci.org/RADAR-CNS/MongoDb-Sink-Connector.svg?branch=master)](https://travis-ci.org/RADAR-CNS/MongoDb-Sink-Connector)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/64eb2330ca7146fcb0b823816f44fcb8)](https://www.codacy.com/app/RADAR-CNS/RADAR-MongoDbConnector?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=RADAR-CNS/RADAR-MongoDbConnector&amp;utm_campaign=Badge_Grade)
 
-The MongoDB-Sink-Connector is a Kafka-Connector for scalably and reliably streaming data from a Kafka topic or number of Kafka topics to a MongoDB collection or number of MongoDB collections.
+The MongoDB-Sink-Connector is a Kafka-Connector for scalable and reliable data streaming from a Kafka topic or number of Kafka topics to a MongoDB collection or number of MongoDB collections.
 It consumes Avro data from Kafka topics, converts them into Documents and inserts them into MongoDB collections.
  
-Currently, it supports records that have a value schema.
+Currently, it supports records that have an Avro schema.
 
-## Prerequisites
+## Installation
 
-- Confluent platform installed
-- MongoDB instance installed and running with access credentials
-- MongoDB-Sink-Connector executable
+This connector can be used inside a Docker stack or installed as a general Kafka Connect plugin.
 
-## Quickstart for MongoDb-Sink-Connector
+### Docker installation
+
+Use the [radarcns/kafka-connect-mongodb-sink](https://hub.docker.com/r/radarcns/kafka-connect-mongodb-sink) Docker image to connect it inside a Docker infrastructure. For example, RADAR-Docker uses a [Docker Compose file](https://github.com/RADAR-CNS/RADAR-Docker/blob/backend-integration/dcompose-stack/radar-cp-hadoop-stack/docker-compose.yml). The Kafka Connect Docker image requires environment to be set up. In RADAR-Docker, the following environment variables are set:
+
+```yaml
+environment:
+  CONNECT_BOOTSTRAP_SERVERS: PLAINTEXT://kafka-1:9092,PLAINTEXT://kafka-2:9092,PLAINTEXT://kafka-3:9092
+  CONNECT_REST_PORT: 8083
+  CONNECT_GROUP_ID: "mongodb-sink"
+  CONNECT_CONFIG_STORAGE_TOPIC: "mongodb-sink.config"
+  CONNECT_OFFSET_STORAGE_TOPIC: "mongodb-sink.offsets"
+  CONNECT_STATUS_STORAGE_TOPIC: "mongodb-sink.status"
+  CONNECT_KEY_CONVERTER: "io.confluent.connect.avro.AvroConverter"
+  CONNECT_VALUE_CONVERTER: "io.confluent.connect.avro.AvroConverter"
+  CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: "http://schema-registry-1:8081"
+  CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: "http://schema-registry-1:8081"
+  CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+  CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+  CONNECT_OFFSET_STORAGE_FILE_FILENAME: "/tmp/mongdb-sink.offset"
+  CONNECT_REST_ADVERTISED_HOST_NAME: "radar-mongodb-connector"
+  CONNECT_ZOOKEEPER_CONNECT: zookeeper-1:2181
+  CONNECT_LOG4J_LOGGERS: "org.reflections=ERROR"
+  KAFKA_BROKERS: 3
+```
+
+Before starting the streams, the Docker image waits for `KAFKA_BROKERS` number of brokers to be available as well as the schema registry.
+
+### System installation
+
+This connector requires the following setup:
+- Confluent platform installed. This connector uses the Confluent 4.0.0 platform.
+- MongoDB instance installed and running with access credentials.
+
+To install the connector, follow the next steps:
+
 - Build MongoDB-Sink-Connector from source  or you can download the latest release from [here](https://github.com/RADAR-CNS/MongoDb-Sink-Connector/releases).
 
     ```shell
@@ -25,7 +57,7 @@ Currently, it supports records that have a value schema.
     ./gradlew clean build
     ```
 
-- Follow [Confluent platform Quick start ](http://docs.confluent.io/3.2.0/quickstart.html)to start zookeeper, kafka-server, schema-registry and kafka-rest to easily stream data to a Kafka topic
+- Follow [Confluent platform Quick start ](http://docs.confluent.io/4.0.0/quickstart.html) to start zookeeper, kafka-server, schema-registry and kafka-rest to easily stream data to a Kafka topic
 
     ```shell
     # Start zookeeper
@@ -40,14 +72,19 @@ Currently, it supports records that have a value schema.
     # Start kafka-rest
     kafka-rest-start /etc/kafka-rest/kafka-rest.properties
     ```
+
 - Install and start MongoDB
 
-- Export kafka-connect-mongodb-sink-*.jar to `CLASSPATH`
+- Add `build/libs/*` and `build/third-party/*` to a new directory in the Connect plugin path
 
     ```shell
-    export CLASSPATH=/pathto/kafka-connect-mongodb-sink-*.jar
+    mkdir /usr/local/share/kafka-connect/plugins/kafka-connect-mongodb-sink
+    cp build/libs/* build/third-party/* /usr/local/share/kafka-connect/plugins/kafka-connect-mongodb-sink
     ```
-- Modify [sink.properties](https://github.com/RADAR-CNS/MongoDb-Sink-Connector/blob/master/sink.properties) file according your environment. The following properties are supported:
+    
+## Usage
+
+Modify [sink.properties](https://github.com/RADAR-CNS/MongoDb-Sink-Connector/blob/master/sink.properties) file according your environment. The following properties are supported:
 
 <table class="data-table"><tbody>
 <tr>
@@ -119,7 +156,7 @@ For example, `kafka_${topic}` for the topic `orders` will map to the collection 
       ```shell
       connect-distributed /patht/cluster.properties ./sink.properties
       ```
-- Stream sample data to configured `topics` in `sink.properties`. You may use, [rest-proxy](http://docs.confluent.io/3.2.0/kafka-rest/docs/intro.html#produce-and-consume-avro-messages) to do this easily.
+- Stream sample data to configured `topics` in `sink.properties`. You may use, [rest-proxy](http://docs.confluent.io/4.0.0/kafka-rest/docs/intro.html#produce-and-consume-avro-messages) to do this easily.
 
     ```shell
     curl -X POST -H "Content-Type: application/vnd.kafka.avro.v2+json" \
@@ -321,7 +358,7 @@ For example, `kafka_${topic}` for the topic `orders` will map to the collection 
 
 ## Developer guide 
 
-This `MongoDB-Sink-Connector` works based on `RecordConverter`s to convert a `SinkRecord` to a `Document`. The default [RecordConverter](https://github.com/RADAR-CNS/MongoDb-Sink-Connector/blob/master/src/main/java/org/radarcns/serialization/RecordConverter.java) is [GenericRecordConverter](https://github.com/RADAR-CNS/MongoDb-Sink-Connector/blob/master/src/main/java/org/radarcns/serialization/GenericRecordConverter.java), which converts a record-key as `_id` and adds a field for every field-name from record-value. The `GenericRecordConverter` supports conversion of most of the primitive types and collections.
+This `MongoDB-Sink-Connector` works based on `RecordConverter`s to convert a `SinkRecord` to a `Document`. The default [RecordConverter](https://github.com/RADAR-CNS/MongoDb-Sink-Connector/blob/master/src/main/java/org/radarcns/connect/mongodb/serialization/RecordConverter.java) is [GenericRecordConverter](https://github.com/RADAR-CNS/MongoDb-Sink-Connector/blob/master/src/main/java/org/radarcns/serialization/GenericRecordConverter.java), which converts a record-key as `_id` and adds a field for every field-name from record-value. The `GenericRecordConverter` supports conversion of most of the primitive types and collections.
 
 For Avro records with complex schemas, or for custom collection format it is recommended to write your own `RecordConverter` and register it to an extended `RecordConverterFactory`. Writing a custom `RecordConverter` is relatively straight forward. The interface requires two methods to be implemented.
 ```java
@@ -451,9 +488,8 @@ public interface RecordConverter {
     # Factory class to do the actual record conversion
     record.converter.class=org.radarcns.connect.mongodb.example.RecordConverterFactoryExample
     ```
-A working example of extended MongoDb-Sink-Connector can be found [here](https://github.com/RADAR-CNS/RADAR-MongoDB-Sink-Connector). 
 
-### Notes
+#### Notes
 
 The only available setting is the number of records returned in a single call to `poll()` (i.e. `consumer.max.poll.records` param inside `standalone.properties`)
 

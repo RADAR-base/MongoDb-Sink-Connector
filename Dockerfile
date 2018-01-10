@@ -36,8 +36,10 @@ MAINTAINER Nivethika M <nivethika@thehyve.nl> , Joris B <joris@thehyve.nl>
 
 LABEL description="Kafka MongoDB Sink Connector"
 
-COPY --from=builder /code/build/third-party/*.jar /usr/share/java/kafka-connect/plugins/kafka-connect-mongodb-sink/
-COPY --from=builder /code/build/libs/*.jar /usr/share/java/kafka-connect/plugins/kafka-connect-mongodb-sink/
+ENV CONNECT_PLUGIN_PATH /usr/share/java/kafka-connect/plugins
+
+COPY --from=builder /code/build/third-party/*.jar ${CONNECT_PLUGIN_PATH}/kafka-connect-mongodb-sink/
+COPY --from=builder /code/build/libs/*.jar ${CONNECT_PLUGIN_PATH}/kafka-connect-mongodb-sink/
 
 COPY ./src/main/docker/kafka-wait /usr/bin/kafka-wait
 

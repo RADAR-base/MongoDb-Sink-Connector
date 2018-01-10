@@ -1,7 +1,9 @@
 task downloadDependencies {
     configurations.compileClasspath.files
     configurations.runtimeClasspath.files
-    println 'Downloaded all dependencies'
+    doLast {
+        println 'Downloaded all dependencies'
+    }
 }
 
 task copyDependencies(type: Copy, dependsOn: downloadDependencies) {

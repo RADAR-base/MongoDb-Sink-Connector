@@ -31,16 +31,10 @@ dependencies {
     api group: 'org.mongodb', name: 'mongo-java-driver', version: mongodbVersion
 }
 
-
 jar {
     manifest {
         attributes 'Implementation-Title': 'RADAR-CNS MongoDB connector',
                 'Implementation-Version': version
-    }
-    from {
-        configurations.runtimeClasspath.collect {
-            it.isDirectory() ? it : zipTree(it)
-        }
     }
 }
 
