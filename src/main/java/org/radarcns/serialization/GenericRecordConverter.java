@@ -27,10 +27,9 @@ import org.bson.Document;
 /**
  * Generically convert SinkRecords to BSON Documents.
  *
- * <p>The key of a {@link SinkRecord} is converted to String and becomes the Document _id. The value
- * is converted to BsonValue. If it is a primitive value, it is assigned to the "value" property.
- * If it is a Map or Struct, the values are directly entered in the document with the same
- * key-values as the originating Struct or Map.
+ * <p>The key of a {@link SinkRecord} is converted to String and becomes the Document _id.
+ * It is also added as the {@code key} property. The value
+ * is converted to BsonValue and then assigned to the {@code value} property.
  */
 public class GenericRecordConverter implements RecordConverter {
     @Override
@@ -44,19 +43,15 @@ public class GenericRecordConverter implements RecordConverter {
         Document document;
         Object key = record.key();
         if (key != null) {
-            document = new Document("_id", JavaBsonType.objectToString(key));
+            document = new Document("_id", JavaBsonType.objectToString(key))
+                    .append("key", JavaBsonType.objectToBson(key));
         } else {
             document = new Document();
         }
 
         Object value = record.value();
         if (value != null) {
-            BsonValue bson = JavaBsonType.objectToBson(value);
-            if (bson instanceof BsonDocument) {
-                document.putAll((BsonDocument) bson);
-            } else {
-                document.put("value", bson);
-            }
+            document.put("value", JavaBsonType.objectToBson(value));
         }
 
         return document;

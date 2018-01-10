@@ -16,7 +16,7 @@
 
 package org.radarcns.serialization;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,7 +51,7 @@ public class RecordConverterFactory {
      * of supported converters.
      */
     protected List<RecordConverter> genericConverters() {
-        return Arrays.asList(
+        return Collections.singletonList(
                 new GenericRecordConverter());
     }
 
