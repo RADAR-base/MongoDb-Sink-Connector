@@ -34,8 +34,6 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.MongoIterable;
 import com.mongodb.client.model.UpdateOptions;
 import java.io.Closeable;
-import java.util.Collections;
-import java.util.List;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.bson.Document;
