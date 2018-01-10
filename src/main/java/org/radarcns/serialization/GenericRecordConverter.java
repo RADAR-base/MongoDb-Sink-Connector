@@ -20,8 +20,6 @@ import java.util.Collection;
 import java.util.Collections;
 import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.sink.SinkRecord;
-import org.bson.BsonDocument;
-import org.bson.BsonValue;
 import org.bson.Document;
 
 /**

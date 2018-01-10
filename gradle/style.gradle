@@ -1,0 +1,19 @@
+apply plugin: 'pmd'
+apply plugin: 'checkstyle'
+
+checkstyle {
+    toolVersion '6.16'
+}
+
+pmd {
+    toolVersion = '5.5.2'
+    consoleOutput = true
+
+    ruleSets = []
+    ruleSetFiles = files("config/pmd/ruleset.xml")
+}
+
+
+pmdTest {
+    ruleSetFiles = files("config/pmd/test_ruleset.xml")
+}

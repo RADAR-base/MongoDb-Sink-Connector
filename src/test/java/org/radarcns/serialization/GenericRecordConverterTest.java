@@ -18,10 +18,12 @@ package org.radarcns.serialization;
 
 import static org.junit.Assert.assertEquals;
 
-import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
+import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.sink.SinkRecord;
+import org.bson.BsonBoolean;
+import org.bson.BsonDocument;
 import org.bson.BsonInt32;
 import org.bson.BsonString;
 import org.bson.Document;
@@ -51,6 +53,7 @@ public class GenericRecordConverterTest {
     @Test
     public void convertIntString() {
         expected.put("_id", "10");
+        expected.put("key", new BsonInt32(10));
         expected.put("value", new BsonString("mystring"));
 
         SinkRecord record = new SinkRecord(null, 0, SchemaBuilder.int32().build(), 10,
@@ -77,8 +80,12 @@ public class GenericRecordConverterTest {
         value.put("d", 30);
 
         expected.put("_id", "{10-true}");
-        expected.put("c", new BsonString("mystring"));
-        expected.put("d", new BsonInt32(30));
+        expected.put("key", new BsonDocument()
+                .append("a", new BsonInt32(10))
+                .append("b", new BsonBoolean(true)));
+        expected.put("value", new BsonDocument()
+                .append("c", new BsonString("mystring"))
+                .append("d", new BsonInt32(30)));
 
         SinkRecord record = new SinkRecord(null, 0, keySchema, key, valueSchema, value, 0L);
         assertEquals(expected, converter.convert(record));
