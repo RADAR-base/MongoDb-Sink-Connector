@@ -75,8 +75,6 @@ public class MongoWrapperTest {
         } finally {
             wrapper.close();
         }
-
-
     }
 
     @Test
