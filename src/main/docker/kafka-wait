@@ -1,0 +1,64 @@
+#!/bin/bash
+
+# Check if variables exist
+if [ -z "$CONNECT_ZOOKEEPER_CONNECT" ]; then
+    echo "CONNECT_ZOOKEEPER_CONNECT is not defined"
+    exit 2
+fi
+
+if [ -z "$CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL" ]; then
+    echo "CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL is not defined"
+    exit 4
+fi
+
+KAFKA_BROKERS=${KAFKA_BROKERS:-3}
+
+max_timeout=32
+
+tries=10
+timeout=1
+while true; do
+    ZOOKEEPER_CHECK=$(zookeeper-shell ${CONNECT_ZOOKEEPER_CONNECT} <<< "ls /brokers/ids")
+    ZOOKEEPER_CHECK="${ZOOKEEPER_CHECK##*$'\n'}"
+    ZOOKEEPER_CHECK="$(echo -e "${ZOOKEEPER_CHECK}" | tr -d '[:space:]'  | tr -d '['  | tr -d ']')"
+
+    IFS=',' read -r -a array <<< ${ZOOKEEPER_CHECK}
+    LENGTH=${#array[@]}
+    if [ "$LENGTH" -eq "$KAFKA_BROKERS" ]; then
+        echo "Kafka brokers available."
+        break
+    fi
+
+    tries=$((tries - 1))
+    if [ ${tries} -eq 0 ]; then
+        echo "FAILED: KAFKA BROKERs NOT READY."
+        exit 5
+    fi
+    echo "Expected $KAFKA_BROKERS brokers but found only $LENGTH. Waiting $timeout second before retrying ..."
+    sleep ${timeout}
+    if [ ${timeout} -lt ${max_timeout} ]; then
+        timeout=$((timeout * 2))
+    fi
+done
+
+tries=10
+timeout=1
+while true; do
+    if wget --spider -q "${CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL}/subjects" 2>/dev/null; then
+        echo "Schema registry available."
+        break
+    fi
+    tries=$((tries - 1))
+    if [ $tries -eq 0 ]; then
+        echo "FAILED TO REACH SCHEMA REGISTRY."
+        exit 6
+    fi
+    echo "Failed to reach schema registry. Retrying in ${timeout} seconds."
+    sleep ${timeout}
+    if [ ${timeout} -lt ${max_timeout} ]; then
+        timeout=$((timeout * 2))
+    fi
+done
+
+
+echo "Kafka is available. Ready to go!"
