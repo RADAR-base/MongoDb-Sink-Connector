@@ -68,7 +68,7 @@ public enum JavaBsonType {
             for (Map.Entry<?, ?> entry : map.entrySet()) {
                 String key = objectToString(entry.getKey());
                 Object value = entry.getValue();
-                if (key.startsWith("time") || key.equals("start") || key.equals("end")) {
+                if (key.startsWith("time")) {
                     BsonDateTime dateTime = toDateTime(value);
                     if (dateTime != null) {
                         doc.put(key, dateTime);
