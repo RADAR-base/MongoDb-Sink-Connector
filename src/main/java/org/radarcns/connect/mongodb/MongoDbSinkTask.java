@@ -16,15 +16,6 @@
 
 package org.radarcns.connect.mongodb;
 
-import static org.radarcns.connect.mongodb.MongoDbSinkConnector.BUFFER_CAPACITY;
-import static org.radarcns.connect.mongodb.MongoDbSinkConnector.RECORD_CONVERTER;
-
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Timer;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.AbstractConfig;
@@ -33,10 +24,20 @@ import org.apache.kafka.connect.errors.IllegalWorkerStateException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
 import org.radarcns.connect.mongodb.serialization.RecordConverterFactory;
-import org.radarcns.connect.util.DurationTimer;
 import org.radarcns.connect.util.Monitor;
+import org.radarcns.connect.util.OperationTimer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Timer;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+
+import static org.radarcns.connect.mongodb.MongoDbSinkConnector.BUFFER_CAPACITY;
+import static org.radarcns.connect.mongodb.MongoDbSinkConnector.RECORD_CONVERTER;
 
 /**
  * Task to handle data coming from Kafka and send it to MongoDB.
@@ -49,7 +50,7 @@ import org.slf4j.LoggerFactory;
 public class MongoDbSinkTask extends SinkTask {
     private static final Logger log = LoggerFactory.getLogger(MongoDbSinkTask.class);
     private final Monitor monitor;
-    private final DurationTimer actionTimer;
+    private final OperationTimer putTimer;
     private final Map<TopicPartition, Long> latestOffsetPut;
 
     private BlockingQueue<SinkRecord> buffer;
@@ -59,7 +60,7 @@ public class MongoDbSinkTask extends SinkTask {
 
     public MongoDbSinkTask() {
         monitor = new Monitor(log, "have been processed");
-        actionTimer = new DurationTimer();
+        putTimer = new OperationTimer(log, "PUT");
         latestOffsetPut = new HashMap<>();
     }
 
@@ -113,10 +114,8 @@ public class MongoDbSinkTask extends SinkTask {
         if (writer == null) {
             return;
         }
-        if (log.isDebugEnabled()) {
-            log.debug("Init put");
-            actionTimer.reset();
-        }
+
+        putTimer.start();
 
         for (SinkRecord record : sinkRecords) {
             TopicPartition partition = new TopicPartition(record.topic(),
@@ -130,10 +129,7 @@ public class MongoDbSinkTask extends SinkTask {
             }
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug("[PUT] Time elapsed: {} s", actionTimer.duration());
-            log.debug("End put");
-        }
+        putTimer.stop();
     }
 
     @Override
@@ -141,8 +137,8 @@ public class MongoDbSinkTask extends SinkTask {
         if (writer == null) {
             return;
         }
-        log.debug("Init flush");
-        actionTimer.reset();
+        OperationTimer flushTimer = new OperationTimer(log, "FLUSH");
+        flushTimer.start();
 
         Map<TopicPartition, Long> offsetsPut = new HashMap<>();
         for (TopicPartition partition : offsets.keySet()) {
@@ -152,9 +148,7 @@ public class MongoDbSinkTask extends SinkTask {
             }
         }
         writer.flush(offsetsPut);
-
-        log.info("[FLUSH] Time elapsed: {} s", actionTimer.duration());
-        log.debug("End flush");
+        flushTimer.stop();
     }
 
     @Override

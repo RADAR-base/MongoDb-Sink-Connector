@@ -19,6 +19,17 @@ package org.radarcns.connect.mongodb;
 import com.mongodb.MongoException;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoIterable;
+import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.connect.errors.ConnectException;
+import org.apache.kafka.connect.errors.DataException;
+import org.apache.kafka.connect.sink.SinkRecord;
+import org.bson.Document;
+import org.radarcns.connect.mongodb.serialization.RecordConverter;
+import org.radarcns.connect.mongodb.serialization.RecordConverterFactory;
+import org.radarcns.connect.util.Monitor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,17 +39,6 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.connect.errors.ConnectException;
-import org.apache.kafka.connect.errors.DataException;
-import org.apache.kafka.connect.sink.SinkRecord;
-import org.bson.Document;
-import org.radarcns.connect.mongodb.serialization.RecordConverter;
-import org.radarcns.connect.mongodb.serialization.RecordConverterFactory;
-import org.radarcns.connect.util.DurationTimer;
-import org.radarcns.connect.util.Monitor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A thread that reads Kafka SinkRecords from a buffer and writes them to a MongoDB database.
@@ -167,14 +167,11 @@ public class MongoDbWriter implements Closeable, Runnable {
      */
     public synchronized void flush(Map<TopicPartition, Long> offsets)
             throws ConnectException {
-
-        log.debug("Init flush-writer");
         if (exception != null) {
             log.error("MongoDB writer is in an illegal state");
             throw new ConnectException("MongoDB writer is in an illegal state", exception);
         }
 
-        DurationTimer timer = new DurationTimer();
         logOffsets(offsets);
 
         List<Map.Entry<TopicPartition, Long>> waiting = new ArrayList<>(offsets.entrySet());
@@ -192,9 +189,6 @@ public class MongoDbWriter implements Closeable, Runnable {
             }
 
             if (waiting.isEmpty()) {
-                log.info("[FLUSH-WRITER] Time-elapsed: {} s", timer.duration());
-                log.debug("End flush-writer");
-
                 break;
             }
 
