@@ -34,11 +34,16 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.MongoIterable;
 import com.mongodb.client.model.UpdateOptions;
 import java.io.Closeable;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.print.Doc;
 
 /**
  * Wrapper around {@link MongoClient}.
@@ -50,6 +55,9 @@ public class MongoWrapper implements Closeable {
     private final String collectionFormat;
     private final MongoDatabase database;
 
+    private static final UpdateOptions UPDATE_UPSERT = new UpdateOptions().upsert(true);
+    private final Map<String, MongoCollection<Document>> collectionCache;
+
     /**
      * Create a new {@link MongoClient}.
      *
@@ -59,6 +67,7 @@ public class MongoWrapper implements Closeable {
     public MongoWrapper(AbstractConfig config, MongoClientOptions options) {
         collectionFormat = config.getString(COLLECTION_FORMAT);
         String dbName = config.getString(MONGO_DATABASE);
+        collectionCache = new HashMap<>();
         credentials = createCredentials(config, dbName);
         mongoClient = createClient(config, options);
         database = mongoClient.getDatabase(dbName);
@@ -127,20 +136,18 @@ public class MongoWrapper implements Closeable {
      * @throws MongoException if the document could not be stored
      */
     public void store(String topic, Document doc) throws MongoException {
-        String collectionName = collectionFormat.replace("{$topic}", topic);
-        MongoCollection<Document> collection = database.getCollection(collectionName);
+        getCollection(topic).replaceOne(eq("_id", doc.get("_id")), doc, UPDATE_UPSERT);
+    }
 
-        UpdateOptions options = new UpdateOptions().upsert(true);
-        collection.replaceOne(eq("_id", doc.get("_id")), doc, options);
+    private MongoCollection<Document> getCollection(String topic) {
+        return collectionCache.computeIfAbsent(topic,
+                t -> database.getCollection(collectionFormat.replace("{$topic}", t)));
     }
 
     /**
      * Retrieves
      */
     public MongoIterable<Document> getDocuments(String topic) {
-        String collectionName = collectionFormat.replace("{$topic}", topic);
-        MongoCollection<Document> collection = database.getCollection(collectionName);
-
-        return collection.find();
+        return getCollection(topic).find();
     }
 }
