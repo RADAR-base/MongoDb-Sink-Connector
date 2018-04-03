@@ -16,14 +16,6 @@
 
 package org.radarcns.connect.mongodb;
 
-import static com.mongodb.client.model.Filters.eq;
-import static org.radarcns.connect.mongodb.MongoDbSinkConnector.COLLECTION_FORMAT;
-import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_DATABASE;
-import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_HOST;
-import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_PASSWORD;
-import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_PORT;
-import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_USERNAME;
-
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
 import com.mongodb.MongoCredential;
@@ -32,18 +24,28 @@ import com.mongodb.ServerAddress;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.MongoIterable;
+import com.mongodb.client.model.InsertOneModel;
+import com.mongodb.client.model.ReplaceOneModel;
 import com.mongodb.client.model.UpdateOptions;
-import java.io.Closeable;
-import java.util.HashMap;
-import java.util.Map;
-
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.print.Doc;
+import java.io.Closeable;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static com.mongodb.client.model.Filters.eq;
+import static org.radarcns.connect.mongodb.MongoDbSinkConnector.COLLECTION_FORMAT;
+import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_DATABASE;
+import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_HOST;
+import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_PASSWORD;
+import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_PORT;
+import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_USERNAME;
 
 /**
  * Wrapper around {@link MongoClient}.
@@ -136,7 +138,26 @@ public class MongoWrapper implements Closeable {
      * @throws MongoException if the document could not be stored
      */
     public void store(String topic, Document doc) throws MongoException {
-        getCollection(topic).replaceOne(eq("_id", doc.get("_id")), doc, UPDATE_UPSERT);
+        MongoCollection<Document> collection = getCollection(topic);
+        Object id = doc.get("_id");
+        if (id != null) {
+            collection.replaceOne(eq("_id", id), doc, UPDATE_UPSERT);
+        } else {
+            collection.insertOne(doc);
+        }
+    }
+
+    public void store(String topic, Stream<Document> docs) throws MongoException {
+        getCollection(topic).bulkWrite(docs
+                .map(doc -> {
+                    Object id = doc.get("_id");
+                    if (id != null) {
+                        return new ReplaceOneModel<>(eq("_id", id), doc, UPDATE_UPSERT);
+                    } else {
+                        return new InsertOneModel<>(doc);
+                    }
+                })
+                .collect(Collectors.toList()));
     }
 
     private MongoCollection<Document> getCollection(String topic) {

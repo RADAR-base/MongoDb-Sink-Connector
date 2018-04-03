@@ -107,4 +107,10 @@ public class MongoDbSinkConnectorTest {
         exampleConfig.put(COLLECTION_FORMAT, "");
         new MongoDbSinkConnector().start(exampleConfig);
     }
+
+    @Test
+    public void htmlTable() {
+        System.out.println("Configuration table:");
+        System.out.println(new MongoDbSinkConnector().config().toHtmlTable());
+    }
 }

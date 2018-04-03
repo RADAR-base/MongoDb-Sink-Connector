@@ -36,6 +36,8 @@ import java.util.Timer;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
+import static org.radarcns.connect.mongodb.MongoDbSinkConnector.BATCH_FLUSH_MS;
+import static org.radarcns.connect.mongodb.MongoDbSinkConnector.BATCH_SIZE;
 import static org.radarcns.connect.mongodb.MongoDbSinkConnector.BUFFER_CAPACITY;
 import static org.radarcns.connect.mongodb.MongoDbSinkConnector.RECORD_CONVERTER;
 
@@ -86,7 +88,11 @@ public class MongoDbSinkTask extends SinkTask {
         } catch (InstantiationException | IllegalAccessException | ClassCastException ex) {
             throw new IllegalWorkerStateException("Got illegal RecordConverterClass", ex);
         }
-        writer = createMongoDbWriter(config, buffer, converterFactory, timerThread);
+
+        Integer batchSize = config.getInt(BATCH_SIZE);
+        Integer flushMs = config.getInt(BATCH_FLUSH_MS);
+
+        writer = createMongoDbWriter(config, buffer, batchSize, flushMs, converterFactory, timerThread);
         writerThread = new Thread(writer, "MongDB-writer");
         writerThread.start();
     }
@@ -101,12 +107,12 @@ public class MongoDbSinkTask extends SinkTask {
      * @throws ConnectException
      */
     public MongoDbWriter createMongoDbWriter(AbstractConfig config,
-                                      BlockingQueue<SinkRecord> buffer,
-                                      RecordConverterFactory converterFactory, Timer timer)
+            BlockingQueue<SinkRecord> buffer, int batchSize, long flushMs,
+            RecordConverterFactory converterFactory, Timer timer)
             throws ConnectException {
         MongoWrapper mongoHelper = new MongoWrapper(config, null);
 
-        return new MongoDbWriter(mongoHelper, buffer, converterFactory, timer);
+        return new MongoDbWriter(mongoHelper, buffer, batchSize, flushMs, converterFactory, timer);
     }
 
     @Override
