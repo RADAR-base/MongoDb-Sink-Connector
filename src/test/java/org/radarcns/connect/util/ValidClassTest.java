@@ -16,12 +16,12 @@
 
 package org.radarcns.connect.util;
 
-import static org.junit.Assert.assertNotNull;
-
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;
 import org.junit.Test;
 import org.omg.CORBA.Object;
+
+import static org.junit.Assert.assertNotNull;
 
 public class ValidClassTest {
     @Test

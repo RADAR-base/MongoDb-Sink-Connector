@@ -60,6 +60,8 @@ public class MongoWrapper implements Closeable {
     private static final UpdateOptions UPDATE_UPSERT = new UpdateOptions().upsert(true);
     private final Map<String, MongoCollection<Document>> collectionCache;
 
+    private static final String MONGO_ID_KEY = "_id";
+
     /**
      * Create a new {@link MongoClient}.
      *
@@ -131,28 +133,38 @@ public class MongoWrapper implements Closeable {
     }
 
     /**
-     * Store a document in MongoDB.
+     * Store a document in MongoDB. If the document has an ID, it will replace existing
+     * documents with that ID. If it does not, it will be inserted and MongoDB will assign it with
+     * a unique ID.
      *
      * @param topic Kafka topic that the document belongs to
      * @param doc MongoDB document
-     * @throws MongoException if the document could not be stored
+     * @throws MongoException if the document could not be stored.
      */
     public void store(String topic, Document doc) throws MongoException {
         MongoCollection<Document> collection = getCollection(topic);
-        Object id = doc.get("_id");
-        if (id != null) {
-            collection.replaceOne(eq("_id", id), doc, UPDATE_UPSERT);
+        Object mongoId = doc.get(MONGO_ID_KEY);
+        if (mongoId != null) {
+            collection.replaceOne(eq(MONGO_ID_KEY, mongoId), doc, UPDATE_UPSERT);
         } else {
             collection.insertOne(doc);
         }
     }
 
+    /**
+     * Stores all documents in the stream. Documents that have an ID will replace existing
+     * documents with that ID, documents without ID will be inserted and MongoDB will assign it with
+     * a unique ID.
+     * @param topic topic to store the documents for
+     * @param docs documents to insert.
+     * @throws MongoException if a document could not be stored.
+     */
     public void store(String topic, Stream<Document> docs) throws MongoException {
         getCollection(topic).bulkWrite(docs
                 .map(doc -> {
-                    Object id = doc.get("_id");
-                    if (id != null) {
-                        return new ReplaceOneModel<>(eq("_id", id), doc, UPDATE_UPSERT);
+                    Object mongoId = doc.get(MONGO_ID_KEY);
+                    if (mongoId != null) {
+                        return new ReplaceOneModel<>(eq(MONGO_ID_KEY, mongoId), doc, UPDATE_UPSERT);
                     } else {
                         return new InsertOneModel<>(doc);
                     }
@@ -166,7 +178,7 @@ public class MongoWrapper implements Closeable {
     }
 
     /**
-     * Retrieves
+     * Retrieves all documents in a collection.
      */
     public MongoIterable<Document> getDocuments(String topic) {
         return getCollection(topic).find();

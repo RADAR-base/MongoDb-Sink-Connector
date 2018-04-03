@@ -97,7 +97,9 @@ public class MongoDbSinkConnector extends SinkConnector {
                 "RecordConverterFactory that returns classes to convert Kafka SinkRecords to "
                 + "BSON documents.")
             .define(BATCH_SIZE, Type.INT, BATCH_SIZE_DEFAULT, ConfigDef.Range.atLeast(1),
-                LOW, "Batch size to initiate a MongoDB write operation. If the buffer does not reach this capacity within batch.flush.ms, it will be written anyway.")
+                LOW, "Batch size to initiate a MongoDB write operation. If the buffer"
+                            + " does not reach this capacity within batch.flush.ms, it will be"
+                            + " written anyway.")
             .define(BATCH_FLUSH_MS, Type.INT, BATCH_FLUSH_MS_DEFAULT, ConfigDef.Range.atLeast(0),
                 LOW, "Flush a batch after this amount of milliseconds.");
     private Map<String, String> connectorConfig;

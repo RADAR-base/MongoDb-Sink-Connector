@@ -92,19 +92,20 @@ public class MongoDbSinkTask extends SinkTask {
         Integer batchSize = config.getInt(BATCH_SIZE);
         Integer flushMs = config.getInt(BATCH_FLUSH_MS);
 
-        writer = createMongoDbWriter(config, buffer, batchSize, flushMs, converterFactory, timerThread);
+        writer = createMongoDbWriter(config, buffer, batchSize, flushMs, converterFactory,
+                timerThread);
         writerThread = new Thread(writer, "MongDB-writer");
         writerThread.start();
     }
 
     /**
-     * Helper function to create a {@link MongoDbWriter} instance
+     * Helper function to create a {@link MongoDbWriter} instance.
      * @param config object
      * @param buffer buffer of the records
      * @param converterFactory of available converters
      * @param timer for writer
      * @return a {@link MongoDbWriter} object
-     * @throws ConnectException
+     * @throws ConnectException if no connection could be made.
      */
     public MongoDbWriter createMongoDbWriter(AbstractConfig config,
             BlockingQueue<SinkRecord> buffer, int batchSize, long flushMs,

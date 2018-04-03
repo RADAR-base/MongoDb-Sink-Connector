@@ -140,12 +140,13 @@ public class MongoDbWriter implements Closeable, Runnable {
         localBuffer.stream()
                 .map(KafkaDocument::new)
                 // do not write records multiple times
-                .filter(e -> latestOffsets.getOrDefault(e.getPartition(), -1L) < e.getOffset())
+                .filter(e -> e.getOffset() > latestOffsets.getOrDefault(e.getPartition(), -1L))
                 .collect(Collectors.groupingBy(e -> e.getPartition().topic()))
                 .forEach((topic, records) -> {
                     // only write the latest value for each ID
                     Collection<KafkaDocument> docs = records.stream()
-                            .collect(Collectors.toMap(KafkaDocument::getId, Function.identity(), (v1, v2) -> v2))
+                            .collect(Collectors.toMap(
+                                    KafkaDocument::getId, Function.identity(), (v1, v2) -> v2))
                             .values();
 
                     store(topic, docs, 0);
@@ -179,7 +180,8 @@ public class MongoDbWriter implements Closeable, Runnable {
 
     private synchronized void markRecordsDone(Collection<KafkaDocument> record) {
         latestOffsets.putAll(record.stream()
-                .collect(Collectors.toMap(KafkaDocument::getPartition, KafkaDocument::getOffset, Math::max)));
+                .collect(Collectors.toMap(
+                        KafkaDocument::getPartition, KafkaDocument::getOffset, Math::max)));
         notifyAll();
     }
 

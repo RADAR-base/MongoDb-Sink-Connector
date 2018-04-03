@@ -16,6 +16,18 @@
 
 package org.radarcns.connect.mongodb;
 
+import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.sink.SinkRecord;
+import org.junit.Test;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
+import org.radarcns.connect.mongodb.serialization.RecordConverterFactory;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -28,17 +40,6 @@ import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_DATABASE;
 import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_HOST;
 import static org.radarcns.connect.mongodb.MongoDbSinkConnector.RECORD_CONVERTER;
 import static org.radarcns.connect.mongodb.MongoDbSinkConnector.TOPICS_CONFIG;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.BlockingQueue;
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.sink.SinkRecord;
-import org.junit.Test;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-import org.radarcns.connect.mongodb.serialization.RecordConverterFactory;
 
 public class MongoDbSinkTaskTest {
 

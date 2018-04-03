@@ -16,15 +16,16 @@
 
 package org.radarcns.connect.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-
-import java.util.ArrayList;
-import java.util.Collection;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
+
+import java.util.ArrayList;
+import java.util.Collection;
+
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 public class MonitorTest {
     private Logger mockLogger;
