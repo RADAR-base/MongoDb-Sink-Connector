@@ -16,10 +16,11 @@
 
 package org.radarcns.connect.util;
 
+import org.slf4j.Logger;
+
 import java.util.Collection;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.slf4j.Logger;
 
 /**
  * Monitors a count and buffer variable by printing out their values and resetting them.
@@ -63,6 +64,13 @@ public class Monitor extends TimerTask {
     /** Increment the count by one. */
     public void increment() {
         this.count.incrementAndGet();
+    }
+
+    /**
+     * Add number to counter.
+     */
+    public void add(int number) {
+        this.count.addAndGet(number);
     }
 
     /** Get the current count. */

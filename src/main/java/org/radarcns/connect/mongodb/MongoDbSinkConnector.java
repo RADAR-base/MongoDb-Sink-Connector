@@ -16,16 +16,6 @@
 
 package org.radarcns.connect.mongodb;
 
-import static org.apache.kafka.common.config.ConfigDef.Importance.HIGH;
-import static org.apache.kafka.common.config.ConfigDef.Importance.LOW;
-import static org.apache.kafka.common.config.ConfigDef.Importance.MEDIUM;
-import static org.apache.kafka.common.config.ConfigDef.NO_DEFAULT_VALUE;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigDef.Type;
 import org.apache.kafka.common.config.ConfigException;
@@ -39,6 +29,17 @@ import org.radarcns.connect.util.Utility;
 import org.radarcns.connect.util.ValidClass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.apache.kafka.common.config.ConfigDef.Importance.HIGH;
+import static org.apache.kafka.common.config.ConfigDef.Importance.LOW;
+import static org.apache.kafka.common.config.ConfigDef.Importance.MEDIUM;
+import static org.apache.kafka.common.config.ConfigDef.NO_DEFAULT_VALUE;
 
 /**
  * Configures the connection between Kafka and MongoDB.
@@ -55,6 +56,10 @@ public class MongoDbSinkConnector extends SinkConnector {
     public static final String MONGO_DATABASE = "mongo.database";
     public static final String BUFFER_CAPACITY = "buffer.capacity";
     public static final int BUFFER_CAPACITY_DEFAULT = 20_000;
+    public static final String BATCH_SIZE = "batch.size";
+    public static final int BATCH_SIZE_DEFAULT = 2_500;
+    public static final String BATCH_FLUSH_MS = "batch.flush.ms";
+    public static final int BATCH_FLUSH_MS_DEFAULT = 15_000;
     public static final String COLLECTION_FORMAT = "mongo.collection.format";
     public static final String RECORD_CONVERTER = "record.converter.class";
 
@@ -90,7 +95,13 @@ public class MongoDbSinkConnector extends SinkConnector {
             .define(RECORD_CONVERTER, Type.CLASS, RecordConverterFactory.class,
                 ValidClass.isSubclassOf(RecordConverterFactory.class), MEDIUM,
                 "RecordConverterFactory that returns classes to convert Kafka SinkRecords to "
-                + "BSON documents.");
+                + "BSON documents.")
+            .define(BATCH_SIZE, Type.INT, BATCH_SIZE_DEFAULT, ConfigDef.Range.atLeast(1),
+                LOW, "Batch size to initiate a MongoDB write operation. If the buffer"
+                            + " does not reach this capacity within batch.flush.ms, it will be"
+                            + " written anyway.")
+            .define(BATCH_FLUSH_MS, Type.INT, BATCH_FLUSH_MS_DEFAULT, ConfigDef.Range.atLeast(0),
+                LOW, "Flush a batch after this amount of milliseconds.");
     private Map<String, String> connectorConfig;
 
     @Override
@@ -137,9 +148,5 @@ public class MongoDbSinkConnector extends SinkConnector {
     @Override
     public ConfigDef config() {
         return CONFIG_DEF;
-    }
-
-    public static void main(String... args) {
-        logger.info("Configuration table: \n{}", new MongoDbSinkConnector().config().toHtmlTable());
     }
 }

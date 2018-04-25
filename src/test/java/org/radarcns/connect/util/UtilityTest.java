@@ -16,11 +16,12 @@
 
 package org.radarcns.connect.util;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 
 import java.util.Collections;
 import java.util.Map;
-import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 public class UtilityTest {
     @Test

@@ -16,14 +16,6 @@
 
 package org.radarcns.connect.mongodb;
 
-import static com.mongodb.client.model.Filters.eq;
-import static org.radarcns.connect.mongodb.MongoDbSinkConnector.COLLECTION_FORMAT;
-import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_DATABASE;
-import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_HOST;
-import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_PASSWORD;
-import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_PORT;
-import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_USERNAME;
-
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
 import com.mongodb.MongoCredential;
@@ -32,13 +24,28 @@ import com.mongodb.ServerAddress;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.MongoIterable;
+import com.mongodb.client.model.InsertOneModel;
+import com.mongodb.client.model.ReplaceOneModel;
 import com.mongodb.client.model.UpdateOptions;
-import java.io.Closeable;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.Closeable;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static com.mongodb.client.model.Filters.eq;
+import static org.radarcns.connect.mongodb.MongoDbSinkConnector.COLLECTION_FORMAT;
+import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_DATABASE;
+import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_HOST;
+import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_PASSWORD;
+import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_PORT;
+import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_USERNAME;
 
 /**
  * Wrapper around {@link MongoClient}.
@@ -50,6 +57,11 @@ public class MongoWrapper implements Closeable {
     private final String collectionFormat;
     private final MongoDatabase database;
 
+    private static final UpdateOptions UPDATE_UPSERT = new UpdateOptions().upsert(true);
+    private final Map<String, MongoCollection<Document>> collectionCache;
+
+    private static final String MONGO_ID_KEY = "_id";
+
     /**
      * Create a new {@link MongoClient}.
      *
@@ -59,6 +71,7 @@ public class MongoWrapper implements Closeable {
     public MongoWrapper(AbstractConfig config, MongoClientOptions options) {
         collectionFormat = config.getString(COLLECTION_FORMAT);
         String dbName = config.getString(MONGO_DATABASE);
+        collectionCache = new HashMap<>();
         credentials = createCredentials(config, dbName);
         mongoClient = createClient(config, options);
         database = mongoClient.getDatabase(dbName);
@@ -120,27 +133,54 @@ public class MongoWrapper implements Closeable {
     }
 
     /**
-     * Store a document in MongoDB.
+     * Store a document in MongoDB. If the document has an ID, it will replace existing
+     * documents with that ID. If it does not, it will be inserted and MongoDB will assign it with
+     * a unique ID.
      *
      * @param topic Kafka topic that the document belongs to
      * @param doc MongoDB document
-     * @throws MongoException if the document could not be stored
+     * @throws MongoException if the document could not be stored.
      */
     public void store(String topic, Document doc) throws MongoException {
-        String collectionName = collectionFormat.replace("{$topic}", topic);
-        MongoCollection<Document> collection = database.getCollection(collectionName);
-
-        UpdateOptions options = new UpdateOptions().upsert(true);
-        collection.replaceOne(eq("_id", doc.get("_id")), doc, options);
+        MongoCollection<Document> collection = getCollection(topic);
+        Object mongoId = doc.get(MONGO_ID_KEY);
+        if (mongoId != null) {
+            collection.replaceOne(eq(MONGO_ID_KEY, mongoId), doc, UPDATE_UPSERT);
+        } else {
+            collection.insertOne(doc);
+        }
     }
 
     /**
-     * Retrieves
+     * Stores all documents in the stream. Documents that have an ID will replace existing
+     * documents with that ID, documents without ID will be inserted and MongoDB will assign it with
+     * a unique ID.
+     * @param topic topic to store the documents for
+     * @param docs documents to insert.
+     * @throws MongoException if a document could not be stored.
+     */
+    public void store(String topic, Stream<Document> docs) throws MongoException {
+        getCollection(topic).bulkWrite(docs
+                .map(doc -> {
+                    Object mongoId = doc.get(MONGO_ID_KEY);
+                    if (mongoId != null) {
+                        return new ReplaceOneModel<>(eq(MONGO_ID_KEY, mongoId), doc, UPDATE_UPSERT);
+                    } else {
+                        return new InsertOneModel<>(doc);
+                    }
+                })
+                .collect(Collectors.toList()));
+    }
+
+    private MongoCollection<Document> getCollection(String topic) {
+        return collectionCache.computeIfAbsent(topic,
+                t -> database.getCollection(collectionFormat.replace("{$topic}", t)));
+    }
+
+    /**
+     * Retrieves all documents in a collection.
      */
     public MongoIterable<Document> getDocuments(String topic) {
-        String collectionName = collectionFormat.replace("{$topic}", topic);
-        MongoCollection<Document> collection = database.getCollection(collectionName);
-
-        return collection.find();
+        return getCollection(topic).find();
     }
 }
