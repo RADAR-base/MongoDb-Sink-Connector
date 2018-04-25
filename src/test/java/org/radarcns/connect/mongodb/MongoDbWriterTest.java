@@ -16,22 +16,8 @@
 
 package org.radarcns.connect.mongodb;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoIterable;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Timer;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.errors.DataException;
@@ -41,6 +27,22 @@ import org.junit.Test;
 import org.radarcns.connect.mongodb.serialization.RecordConverter;
 import org.radarcns.connect.mongodb.serialization.RecordConverterFactory;
 import org.radarcns.connect.util.Monitor;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Timer;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.stream.Stream;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atMost;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class MongoDbWriterTest {
 
@@ -56,10 +58,10 @@ public class MongoDbWriterTest {
         when(iterator.hasNext()).thenReturn(true, false);
         Document id = new Document();
         id.put("topic", "mytopic");
-        id.put("partition", new Integer(5).intValue());
+        id.put("partition", 5);
         Document partDoc = new Document();
         partDoc.put("_id", id);
-        partDoc.put("offset", new Long(999L).longValue());
+        partDoc.put("offset", 999L);
 
         when(iterator.next()).thenReturn(partDoc);
         when(wrapper.getDocuments("OFFSETS")).thenReturn(iterable);
@@ -85,7 +87,7 @@ public class MongoDbWriterTest {
 
         Timer timer = mock(Timer.class);
 
-        MongoDbWriter writer = new MongoDbWriter(wrapper, buffer, factory, timer);
+        MongoDbWriter writer = new MongoDbWriter(wrapper, buffer, 1000, 1, factory, timer);
         verify(timer).schedule(any(Monitor.class), eq(0L), eq(30_000L));
 
         Thread writerThread = new Thread(writer, "MongoDB-writer");
@@ -104,9 +106,7 @@ public class MongoDbWriterTest {
         writer.flush(Collections.singletonMap(
                 new TopicPartition("mytopic", 5), 1001L));
 
-        verify(wrapper, times(3)).store(any(), any());
-        verify(wrapper).store("mytopic", new Document("mykey", "2"));
-        verify(wrapper).store("mytopic", new Document("mykey", "hi"));
+        verify(wrapper, atMost(3)).store(any(), any(Stream.class));
         partDoc.put("offset", 1001L);
         verify(wrapper).store("OFFSETS", partDoc);
 

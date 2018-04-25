@@ -16,6 +16,18 @@
 
 package org.radarcns.connect.mongodb;
 
+import com.mongodb.MongoClientOptions;
+import com.mongodb.MongoException;
+import org.apache.kafka.common.config.AbstractConfig;
+import org.bson.Document;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+
+import java.lang.reflect.Field;
+import java.util.HashMap;
+import java.util.Map;
+
 import static org.apache.kafka.connect.sink.SinkConnector.TOPICS_CONFIG;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -30,17 +42,6 @@ import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_PASSWORD;
 import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_PORT;
 import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_PORT_DEFAULT;
 import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_USERNAME;
-
-import com.mongodb.MongoClientOptions;
-import com.mongodb.MongoException;
-import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.Map;
-import org.apache.kafka.common.config.AbstractConfig;
-import org.bson.Document;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 public class MongoWrapperTest {
     @Rule

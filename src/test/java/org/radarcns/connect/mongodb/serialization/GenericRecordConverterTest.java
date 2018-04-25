@@ -16,8 +16,6 @@
 
 package org.radarcns.connect.mongodb.serialization;
 
-import static org.junit.Assert.assertEquals;
-
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
@@ -29,6 +27,8 @@ import org.bson.BsonString;
 import org.bson.Document;
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 public class GenericRecordConverterTest {
 
