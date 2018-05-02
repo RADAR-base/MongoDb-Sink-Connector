@@ -10,9 +10,16 @@ targetCompatibility = '1.8'
 sourceCompatibility = '1.8'
 
 ext.slf4jVersion = '1.7.25'
-ext.kafkaVersion = '1.0.0'
+ext.kafkaVersion = '1.0.0-cp1'
 ext.mongodbVersion = '3.6.1'
+ext.confluentVersion = '4.0.0'
 
+
+configurations {
+    codacy
+    provided
+    compile.extendsFrom provided
+}
 // In this section you declare where to find the dependencies of your project
 repositories {
     jcenter()
@@ -27,6 +34,9 @@ dependencies {
 
     // to implement producers and consumers
     compileOnly group: 'org.apache.kafka', name: 'connect-api', version: kafkaVersion
+    provided group: 'io.confluent', name: 'kafka-avro-serializer', version: confluentVersion
+
+    provided group: 'org.apache.kafka', name: 'kafka_2.11', version: kafkaVersion
 
     api group: 'org.mongodb', name: 'mongo-java-driver', version: mongodbVersion
 }
@@ -42,14 +52,23 @@ task wrapper(type: Wrapper) {
     gradleVersion = '4.4'
 }
 
+String[] excludeJars = []
 if (!hasProperty('profile')) {
     ext.profile = 'dev'
+}
+
+if (profile == 'docker') {
+    // Already present in the kafka-connect docker image
+    excludeJars = ["common-utils-${confluentVersion}.jar", "kafka-avro-serializer-${confluentVersion}.jar", "kafka-clients-${kafkaVersion}.jar"
+                   , "kafka-schema-registry-client-${confluentVersion}.jar", "kafka_2.11-${kafkaVersion}.jar"]
 }
 
 apply from: "gradle/profile.${profile}.gradle"
 
 task copyDependencies(type: Copy) {
-    from configurations.runtimeClasspath.files
+    from configurations.runtimeClasspath.files{
+        exclude(excludeJars)
+    }
     into "${buildDir}/third-party/"
 }
 
