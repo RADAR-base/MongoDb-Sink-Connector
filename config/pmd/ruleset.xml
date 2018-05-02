@@ -51,6 +51,7 @@
   <rule ref="rulesets/java/design.xml">
     <exclude name="AvoidDeeplyNestedIfStmts"/>
     <exclude name="SwitchDensity"/>
+    <exclude name="PreserveStackTrace"/>
     <exclude name="AccessorClassGeneration"/>
     <exclude name="ConstructorCallsOverridableMethod"/>
     <exclude name="AvoidSynchronizedAtMethodLevel"/>
@@ -58,12 +59,16 @@
     <exclude name="PositionLiteralsFirstInComparisons"/>
     <exclude name="ConfusingTernary"/>
     <exclude name="UseVarargs"/>
+    <exclude name="AvoidReassigningParameters"/>
   </rule>
 
   <rule ref="rulesets/java/codesize.xml">
+    <exclude name="ModifiedCyclomaticComplexity"/>
+    <exclude name="StdCyclomaticComplexity"/>
     <exclude name="CyclomaticComplexity"/>
     <exclude name="ExcessiveClassLength"/>
     <exclude name="ExcessivePublicCount"/>
+    <exclude name="NPathComplexity"/>
     <exclude name="TooManyFields"/>
     <exclude name="TooManyMethods"/>
   </rule>
