@@ -150,7 +150,7 @@ public class MongoDbWriter implements Closeable, Runnable {
                             .collect(Collectors.toMap(
                                     KafkaDocument::getId, Function.identity(), (v1, v2) -> v2))
                             .values();
-                    
+
                     store(topic, docs, 0);
                     markRecordsDone(docs);
                 });
