@@ -4,7 +4,7 @@ plugins {
     id "com.jfrog.bintray" version "1.7.3" apply false
 }
 
-version = '0.2.1'
+version = '0.2.2-SNAPSHOT'
 
 targetCompatibility = '1.8'
 sourceCompatibility = '1.8'
