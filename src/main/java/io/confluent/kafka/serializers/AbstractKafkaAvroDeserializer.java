@@ -178,9 +178,9 @@ public abstract class AbstractKafkaAvroDeserializer extends AbstractKafkaAvroSer
 
                 Integer version;
                 if (schemaMetadata != null) {
-                    version =schemaMetadata.getVersion();
+                    version = schemaMetadata.getVersion();
                 } else {
-                    try{
+                    try {
                         version = schemaRegistry.getVersion(subject, schema);
                     } catch (RestClientException e) {
                         if (e.getErrorCode() == 40403) {
