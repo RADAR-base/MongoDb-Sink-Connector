@@ -110,6 +110,7 @@ public abstract class AbstractKafkaAvroDeserializer extends AbstractKafkaAvroSer
 
     // The Object return type is a bit messy, but this is the simplest way to have flexible
     // decoding and not duplicate deserialization code multiple times for different variants.
+    @SuppressWarnings("PMD.ExcessiveMethodLength")
     protected Object deserialize(boolean includeSchemaAndVersion, String topic,
                                  Boolean isKey, byte[] payload, Schema readerSchema)
             throws SerializationException {
