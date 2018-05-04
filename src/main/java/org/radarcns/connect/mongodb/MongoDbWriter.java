@@ -138,9 +138,17 @@ public class MongoDbWriter implements Closeable, Runnable {
 
     private void flushLocalBuffer(List<SinkRecord> localBuffer) {
         localBuffer.stream()
-                .map(KafkaDocument::new)
                 // if schema and/or value is null, skip the record
-                .filter(e -> e.getRecord().valueSchema() != null)
+                .filter(e -> {
+                    if (e.valueSchema() == null) {
+                        logger.warn("Cannot write record with null value or schema for record {}",
+                                e.toString());
+                        return false;
+                    } else {
+                        return true;
+                    }
+                })
+                .map(KafkaDocument::new)
                 // do not write records multiple times
                 .filter(e -> e.getOffset() > latestOffsets.getOrDefault(e.getPartition(), -1L))
                 .collect(Collectors.groupingBy(e -> e.getPartition().topic()))
