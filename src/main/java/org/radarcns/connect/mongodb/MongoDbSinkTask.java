@@ -131,6 +131,10 @@ public class MongoDbSinkTask extends SinkTask {
             buffer.add(record);
             monitor.increment();
 
+            //TODO Remove this
+            log.info("{} --> {}", partition, record.kafkaOffset());
+            log.info("Buffer size now --> {}", buffer.size());
+
             if (log.isDebugEnabled()) {
                 log.debug("{} --> {}", partition, record.kafkaOffset());
             }

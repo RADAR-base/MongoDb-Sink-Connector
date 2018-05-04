@@ -123,11 +123,11 @@ public abstract class AbstractKafkaAvroDeserializer extends AbstractKafkaAvroSer
         try {
             ByteBuffer buffer = getByteBuffer(payload);
             id = buffer.getInt();
-            String subject = includeSchemaAndVersion ? getSubjectName(topic, isKey) : null;
+            String subject = includeSchemaAndVersion ? getSubjectName(topic, isKey, null) : null;
             Schema schema;
             SchemaMetadata schemaMetadata = null;
             try {
-                schema = schemaRegistry.getBySubjectAndID(subject, id);
+                schema = schemaRegistry.getBySubjectAndId(subject, id);
             } catch (RestClientException ex) {
                 if (ex.getErrorCode() == 40403) {
                     schemaMetadata = schemaRegistry.getLatestSchemaMetadata(subject);
