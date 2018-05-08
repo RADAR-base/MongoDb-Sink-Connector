@@ -14,12 +14,6 @@ ext.kafkaVersion = '1.1.0'
 ext.mongodbVersion = '3.6.1'
 ext.confluentVersion = '4.1.0'
 
-
-configurations {
-    codacy
-    provided
-    compile.extendsFrom provided
-}
 // In this section you declare where to find the dependencies of your project
 repositories {
     jcenter()
