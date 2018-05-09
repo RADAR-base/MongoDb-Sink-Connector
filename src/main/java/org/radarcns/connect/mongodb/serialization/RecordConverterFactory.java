@@ -67,10 +67,6 @@ public class RecordConverterFactory {
      */
     public RecordConverter getRecordConverter(SinkRecord record)
             throws DataException {
-        if (record.valueSchema() == null) {
-            throw new DataException("Cannot process data from topic "
-                    + record.topic() + " without a schema");
-        }
 
         for (String option : generateNameOptions(record)) {
             RecordConverter converter = genericConverterMap.get(option);
