@@ -1,2 +1,3 @@
-io.confluent.kafka.serializers
-org.radarcns.sink.hdfs
+org.radarcns.connect.mongodb
+org.radarcns.connect.mongodb.serialization
+org.radarcns.connect.util
