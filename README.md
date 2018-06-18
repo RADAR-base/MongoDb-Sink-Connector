@@ -501,6 +501,10 @@ Connectors can be run inside any machine where Kafka has been installed. Therefo
 
 To reset a connector running in `standalone mode` you have to stop it and then modify `name` and `offset.storage.file.filename` respectively inside `sink.properties` and `standalone.properties`
 
+## Javadoc
+More info and Javadocs of the connector are available at - 
+- [Javadoc](https://radar-base.github.io/MongoDb-Sink-Connector/)
+
 ## Contributing
 
 All of the contribution code should be formatted using the [Google Java Code Style Guide](https://google.github.io/styleguide/javaguide.html).
