@@ -28,6 +28,11 @@ deploy:
     on:
       tags: true
   - provider: script
+    script: ./update-gh-pages-docs.sh
+    skip_cleanup: true
+    on:
+      tags: true
+  - provider: script
     script: ./gradlew bintrayUpload
     skip_cleanup: true
     on:
