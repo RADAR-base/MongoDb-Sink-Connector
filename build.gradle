@@ -4,14 +4,15 @@ plugins {
     id "com.jfrog.bintray" version "1.7.3" apply false
 }
 
-version = '0.2.1'
+version = '0.2.2'
 
 targetCompatibility = '1.8'
 sourceCompatibility = '1.8'
 
 ext.slf4jVersion = '1.7.25'
-ext.kafkaVersion = '1.0.0'
+ext.kafkaVersion = '1.1.0'
 ext.mongodbVersion = '3.6.1'
+ext.confluentVersion = '4.1.0'
 
 // In this section you declare where to find the dependencies of your project
 repositories {
@@ -27,6 +28,9 @@ dependencies {
 
     // to implement producers and consumers
     compileOnly group: 'org.apache.kafka', name: 'connect-api', version: kafkaVersion
+    compileOnly group: 'io.confluent', name: 'kafka-avro-serializer', version: confluentVersion
+
+    compileOnly group: 'org.apache.kafka', name: 'kafka_2.11', version: kafkaVersion
 
     api group: 'org.mongodb', name: 'mongo-java-driver', version: mongodbVersion
 }

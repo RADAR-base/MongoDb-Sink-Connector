@@ -1,7 +1,7 @@
 # Kafka MongoDb Sink Connector
 
-[![Build Status](https://travis-ci.org/RADAR-CNS/MongoDb-Sink-Connector.svg?branch=master)](https://travis-ci.org/RADAR-CNS/MongoDb-Sink-Connector)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/64eb2330ca7146fcb0b823816f44fcb8)](https://www.codacy.com/app/RADAR-CNS/RADAR-MongoDbConnector?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=RADAR-CNS/RADAR-MongoDbConnector&amp;utm_campaign=Badge_Grade)
+[![Build Status](https://travis-ci.org/RADAR-base/MongoDb-Sink-Connector.svg?branch=master)](https://travis-ci.org/RADAR-base/MongoDb-Sink-Connector)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/64eb2330ca7146fcb0b823816f44fcb8)](https://www.codacy.com/app/RADAR-base/RADAR-MongoDbConnector?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=RADAR-base/RADAR-MongoDbConnector&amp;utm_campaign=Badge_Grade)
 
 The MongoDB-Sink-Connector is a Kafka-Connector for scalable and reliable data streaming from a Kafka topic or number of Kafka topics to a MongoDB collection or number of MongoDB collections.
 It consumes Avro data from Kafka topics, converts them into Documents and inserts them into MongoDB collections.
@@ -14,7 +14,7 @@ This connector can be used inside a Docker stack or installed as a general Kafka
 
 ### Docker installation
 
-Use the [radarcns/kafka-connect-mongodb-sink](https://hub.docker.com/r/radarcns/kafka-connect-mongodb-sink) Docker image to connect it inside a Docker infrastructure. For example, RADAR-Docker uses a [Docker Compose file](https://github.com/RADAR-CNS/RADAR-Docker/blob/backend-integration/dcompose-stack/radar-cp-hadoop-stack/docker-compose.yml). The Kafka Connect Docker image requires environment to be set up. In RADAR-Docker, the following environment variables are set:
+Use the [radarbase/kafka-connect-mongodb-sink](https://hub.docker.com/r/radarbase/kafka-connect-mongodb-sink) Docker image to connect it inside a Docker infrastructure. For example, RADAR-Docker uses a [Docker Compose file](https://github.com/RADAR-base/RADAR-Docker/blob/backend-integration/dcompose-stack/radar-cp-hadoop-stack/docker-compose.yml). The Kafka Connect Docker image requires environment to be set up. In RADAR-Docker, the following environment variables are set:
 
 ```yaml
 environment:
@@ -47,10 +47,10 @@ This connector requires the following setup:
 
 To install the connector, follow the next steps:
 
-- Build MongoDB-Sink-Connector from source  or you can download the latest release from [here](https://github.com/RADAR-CNS/MongoDb-Sink-Connector/releases).
+- Build MongoDB-Sink-Connector from source  or you can download the latest release from [here](https://github.com/RADAR-base/MongoDb-Sink-Connector/releases).
 
     ```shell
-    git clone https://github.com/RADAR-CNS/MongoDb-Sink-Connector.git
+    git clone https://github.com/RADAR-base/MongoDb-Sink-Connector.git
     
     cd MongoDb-Sink-Connector
     
@@ -84,7 +84,7 @@ To install the connector, follow the next steps:
     
 ## Usage
 
-Modify [sink.properties](https://github.com/RADAR-CNS/MongoDb-Sink-Connector/blob/master/sink.properties) file according your environment. The following properties are supported:
+Modify [sink.properties](https://github.com/RADAR-base/MongoDb-Sink-Connector/blob/master/sink.properties) file according your environment. The following properties are supported:
 
 <table class="data-table"><tbody>
 <tr>
@@ -362,7 +362,7 @@ For example, `kafka_${topic}` for the topic `orders` will map to the collection 
 
 ## Developer guide 
 
-This `MongoDB-Sink-Connector` works based on `RecordConverter`s to convert a `SinkRecord` to a `Document`. The default [RecordConverter](https://github.com/RADAR-CNS/MongoDb-Sink-Connector/blob/master/src/main/java/org/radarcns/connect/mongodb/serialization/RecordConverter.java) is [GenericRecordConverter](https://github.com/RADAR-CNS/MongoDb-Sink-Connector/blob/master/src/main/java/org/radarcns/serialization/GenericRecordConverter.java), which converts a record-key as `_id` and adds a field for every field-name from record-value. The `GenericRecordConverter` supports conversion of most of the primitive types and collections.
+This `MongoDB-Sink-Connector` works based on `RecordConverter`s to convert a `SinkRecord` to a `Document`. The default [RecordConverter](https://github.com/RADAR-base/MongoDb-Sink-Connector/blob/master/src/main/java/org/radarcns/connect/mongodb/serialization/RecordConverter.java) is [GenericRecordConverter](https://github.com/RADAR-base/MongoDb-Sink-Connector/blob/master/src/main/java/org/radarcns/serialization/GenericRecordConverter.java), which converts a record-key as `_id` and adds a field for every field-name from record-value. The `GenericRecordConverter` supports conversion of most of the primitive types and collections.
 
 For Avro records with complex schemas, or for custom collection format it is recommended to write your own `RecordConverter` and register it to an extended `RecordConverterFactory`. Writing a custom `RecordConverter` is relatively straight forward. The interface requires two methods to be implemented.
 ```java
@@ -399,7 +399,7 @@ public interface RecordConverter {
       "namespace": "org.radarcns.key",
       "type": "record",
       "name": "MeasurementKey",
-      "doc": "Measurement key in the RADAR-CNS project",
+      "doc": "Measurement key in the RADAR-base project",
       "fields": [
         {"name": "userId", "type": "string", "doc": "user ID"},
         {"name": "sourceId", "type": "string", "doc": "device source ID"}
@@ -501,7 +501,11 @@ Connectors can be run inside any machine where Kafka has been installed. Therefo
 
 To reset a connector running in `standalone mode` you have to stop it and then modify `name` and `offset.storage.file.filename` respectively inside `sink.properties` and `standalone.properties`
 
+## Javadoc
+More info and Javadocs of the connector are available at - 
+- [Javadoc](https://radar-base.github.io/MongoDb-Sink-Connector/)
+
 ## Contributing
 
 All of the contribution code should be formatted using the [Google Java Code Style Guide](https://google.github.io/styleguide/javaguide.html).
-If you want to contribute a feature or fix browse our [issues](https://github.com/RADAR-CNS/RADAR-MongoDB-Sink-Connector/issues), and please make a pull request.
+If you want to contribute a feature or fix browse our [issues](https://github.com/RADAR-base/RADAR-MongoDB-Sink-Connector/issues), and please make a pull request.
