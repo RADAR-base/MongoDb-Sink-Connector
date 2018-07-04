@@ -38,9 +38,11 @@ LABEL description="Kafka MongoDB Sink Connector"
 
 ENV CONNECT_PLUGIN_PATH /usr/share/java/kafka-connect/plugins
 
+# To isolate the classpath from the plugin path as recommended
 COPY --from=builder /code/build/third-party/*.jar ${CONNECT_PLUGIN_PATH}/kafka-connect-mongodb-sink/
 COPY --from=builder /code/build/libs/*.jar ${CONNECT_PLUGIN_PATH}/kafka-connect-mongodb-sink/
 
+# Load topics validator
 COPY ./src/main/docker/kafka-wait /usr/bin/kafka-wait
 
 # Load modified launcher
