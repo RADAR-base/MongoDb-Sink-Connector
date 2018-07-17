@@ -24,50 +24,32 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.apache.kafka.connect.sink.SinkConnector.TOPICS_CONFIG;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.radarcns.connect.mongodb.MongoDbSinkConnector.COLLECTION_FORMAT;
 import static org.radarcns.connect.mongodb.MongoDbSinkConnector.CONFIG_DEF;
-import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_DATABASE;
-import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_HOST;
-import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_PASSWORD;
-import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_PORT;
-import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_PORT_DEFAULT;
-import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_USERNAME;
+import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_URI;
 
 public class MongoWrapperTest {
     @Rule
     public ExpectedException thrown = ExpectedException.none();
 
     @Test
-    public void checkConnectionWithoutCredentials() throws Exception {
+    public void checkConnectionWithoutCredentials() {
         Map<String, Object> configMap = new HashMap<>();
-        configMap.put(MONGO_USERNAME, null);
-        configMap.put(MONGO_PASSWORD, null);
-        configMap.put(MONGO_PORT, MONGO_PORT_DEFAULT + 1000);
-        configMap.put(MONGO_HOST, "localhost");
-        configMap.put(MONGO_DATABASE, "mydb");
+        configMap.put(MONGO_URI, "mongodb://localhost:28017/mydb");
         configMap.put(COLLECTION_FORMAT, "{$topic}");
         configMap.put(TOPICS_CONFIG, "a");
 
-        Field credentialsField = MongoWrapper.class.getDeclaredField("credentials");
-        credentialsField.setAccessible(true);
-        MongoClientOptions timeout = MongoClientOptions.builder()
+        MongoClientOptions.Builder timeout = MongoClientOptions.builder()
                 .connectTimeout(1)
                 .socketTimeout(1)
-                .serverSelectionTimeout(1)
-                .build();
+                .serverSelectionTimeout(1);
         MongoWrapper wrapper = new MongoWrapper(new AbstractConfig(CONFIG_DEF, configMap), timeout);
 
-        assertThat(credentialsField.get(wrapper), is(nullValue()));
         assertFalse(wrapper.checkConnection());
 
         thrown.expect(MongoException.class);
@@ -79,57 +61,18 @@ public class MongoWrapperTest {
     }
 
     @Test
-    public void checkConnectionWithEmptyCredentials() throws Exception {
+    public void checkConnectionWithCredentials() {
         Map<String, Object> configMap = new HashMap<>();
-        configMap.put(MONGO_USERNAME, "");
-        configMap.put(MONGO_PASSWORD, "");
-        configMap.put(MONGO_PORT, MONGO_PORT_DEFAULT + 1000);
-        configMap.put(MONGO_HOST, "localhost");
-        configMap.put(MONGO_DATABASE, "mydb");
+        configMap.put(MONGO_URI, "mongodb://myuser:mypassword@localhost:28017/mydb");
         configMap.put(COLLECTION_FORMAT, "{$topic}");
         configMap.put(TOPICS_CONFIG, "a");
 
-        Field credentialsField = MongoWrapper.class.getDeclaredField("credentials");
-        credentialsField.setAccessible(true);
-        MongoClientOptions timeout = MongoClientOptions.builder()
+        MongoClientOptions.Builder timeout = MongoClientOptions.builder()
                 .connectTimeout(1)
                 .socketTimeout(1)
-                .serverSelectionTimeout(1)
-                .build();
+                .serverSelectionTimeout(1);
         MongoWrapper wrapper = new MongoWrapper(new AbstractConfig(CONFIG_DEF, configMap), timeout);
 
-        assertThat(credentialsField.get(wrapper), is(nullValue()));
-        assertFalse(wrapper.checkConnection());
-
-        thrown.expect(MongoException.class);
-        try {
-            wrapper.store("mytopic", new Document());
-        } finally {
-            wrapper.close();
-        }
-    }
-
-    @Test
-    public void checkConnectionWithCredentials() throws Exception {
-        Map<String, Object> configMap = new HashMap<>();
-        configMap.put(MONGO_USERNAME, "myuser");
-        configMap.put(MONGO_PASSWORD, "mypassword");
-        configMap.put(MONGO_PORT, MONGO_PORT_DEFAULT + 1000);
-        configMap.put(MONGO_HOST, "localhost");
-        configMap.put(MONGO_DATABASE, "mydb");
-        configMap.put(COLLECTION_FORMAT, "{$topic}");
-        configMap.put(TOPICS_CONFIG, "a");
-
-        Field credentialsField = MongoWrapper.class.getDeclaredField("credentials");
-        credentialsField.setAccessible(true);
-        MongoClientOptions timeout = MongoClientOptions.builder()
-                .connectTimeout(1)
-                .socketTimeout(1)
-                .serverSelectionTimeout(1)
-                .build();
-        MongoWrapper wrapper = new MongoWrapper(new AbstractConfig(CONFIG_DEF, configMap), timeout);
-
-        assertThat(credentialsField.get(wrapper), is(not(nullValue())));
         assertFalse(wrapper.checkConnection());
 
         thrown.expect(MongoException.class);

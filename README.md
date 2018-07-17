@@ -96,28 +96,20 @@ Modify [sink.properties](https://github.com/RADAR-base/MongoDb-Sink-Connector/bl
 <th>Importance</th>
 </tr>
 <tr>
-<td>topics</td><td>List of topics to be streamed.</td><td>list</td><td></td><td></td><td>high</td></tr>
+<td>topics</td></td><td>List of topics to be streamed.</td></td><td>list</td></td><td></td></td><td></td></td><td>high</td></td></tr>
 <tr>
-<td>record.converter.class</td><td>RecordConverterFactory that returns classes to convert Kafka SinkRecords to BSON documents.</td><td>class</td><td>org.radarcns.connect.mongodb.serialization.RecordConverterFactory</td><td>org.radarcns.connect.util.ValidClass@48cf768c</td><td>medium</td></tr>
+<td>record.converter.class</td></td><td>RecordConverterFactory that returns classes to convert Kafka SinkRecords to BSON documents.</td></td><td>class</td></td><td>org.radarcns.connect.mongodb.serialization.RecordConverterFactory</td></td><td>Class extending org.radarcns.connect.mongodb.serialization.RecordConverterFactory</td></td><td>medium</td></td></tr>
 <tr>
-<td>batch.flush.ms</td><td>Flush a batch after this amount of milliseconds.</td><td>int</td><td>15000</td><td>[0,...]</td><td>low</td></tr>
+<td>batch.flush.ms</td></td><td>Flush a batch after this amount of milliseconds.</td></td><td>int</td></td><td>15000</td></td><td>[0,...]</td></td><td>low</td></td></tr>
 <tr>
-<td>batch.size</td><td>Batch size to initiate a MongoDB write operation. If the buffer does not reach this capacity within batch.flush.ms, it will be written anyway.</td><td>int</td><td>2500</td><td>[1,...]</td><td>low</td></tr>
+<td>batch.size</td></td><td>Batch size to initiate a MongoDB write operation. If the buffer does not reach this capacity within batch.flush.ms, it will be written anyway.</td></td><td>int</td></td><td>2500</td></td><td>[1,...]</td></td><td>low</td></td></tr>
 <tr>
-<td>buffer.capacity</td><td>Maximum number of items in a MongoDB writer buffer. Once the buffer becomes full, the task fails.</td><td>int</td><td>20000</td><td>[1,...]</td><td>low</td></tr>
+<td>buffer.capacity</td></td><td>Maximum number of items in a MongoDB writer buffer. Once the buffer becomes full, the task fails.</td></td><td>int</td></td><td>20000</td></td><td>[1,...]</td></td><td>low</td></td></tr>
 <tr>
-<td>mongo.host</td><td>MongoDB host name to write data to</td><td>string</td><td></td><td>org.radarcns.connect.util.NotEmptyString@59f95c5d</td><td>high</td></tr>
+<td>mongo.uri</td></td><td>URI encoding MongoDB host, port, user (if any) and database.</td></td><td>string</td></td><td></td></td><td>(mongodb|mongodb+srv)://[<user>:<password>@]<host>[:<port>]/<database></td></td><td>high</td></td></tr>
 <tr>
-<td>mongo.port</td><td>MongoDB port</td><td>int</td><td>27017</td><td>[1,...]</td><td>low</td></tr>
-<tr>
-<td>mongo.database</td><td>MongoDB database name</td><td>string</td><td></td><td>org.radarcns.connect.util.NotEmptyString@5ccd43c2</td><td>high</td></tr>
-<tr>
-<td>mongo.username</td><td>Username to connect to MongoDB database. If not set, no credentials are used.</td><td>string</td><td>null</td><td></td><td>medium</td></tr>
-<tr>
-<td>mongo.password</td><td>Password to connect to MongoDB database. If not set, no credentials are used.</td><td>string</td><td>null</td><td></td><td>medium</td></tr>
-<tr>
-<td>mongo.collection.format</td><td>A format string for the destination collection name, which may contain `${topic}` as a placeholder for the originating topic name.
-For example, `kafka_${topic}` for the topic `orders` will map to the collection name `kafka_orders`.</td><td>string</td><td>{$topic}</td><td>org.radarcns.connect.util.NotEmptyString@4aa8f0b4</td><td>medium</td></tr>
+<td>mongo.collection.format</td></td><td>A format string for the destination collection name, which may contain `${topic}` as a placeholder for the originating topic name.
+For example, `kafka_${topic}` for the topic `orders` will map to the collection name `kafka_orders`.</td></td><td>string</td></td><td>{$topic}</td></td><td>Non-empty string</td></td><td>medium</td></td></tr>
 </tbody></table>
 
 - A sample configuration may look as below.
@@ -133,13 +125,7 @@ For example, `kafka_${topic}` for the topic `orders` will map to the collection 
     # Topics that will be consumed
     topics=avrotest
     # MongoDB server
-    mongo.host=localhost
-    mongo.port=27017
-    
-    # MongoDB configuration
-    mongo.username=mongodb-username
-    mongo.password=***
-    mongo.database=mongodb-database
+    mongo.uri=mongodb://me:pass123@localhost/kafka-db
     
     # Collection name for putting data into the MongoDB database. The {$topic} token will be replaced
     # by the Kafka topic name.

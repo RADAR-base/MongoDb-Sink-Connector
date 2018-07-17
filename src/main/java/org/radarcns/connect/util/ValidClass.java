@@ -55,4 +55,8 @@ public final class ValidClass implements ConfigDef.Validator {
             throw new ConfigException(name, obj, "Class " + obj + " must be accessible: " + ex);
         }
     }
+
+    public String toString() {
+        return "Class extending " + superClass.getName();
+    }
 }

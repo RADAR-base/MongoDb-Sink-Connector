@@ -36,8 +36,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.radarcns.connect.mongodb.MongoDbSinkConnector.BUFFER_CAPACITY;
-import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_DATABASE;
-import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_HOST;
+import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_URI;
 import static org.radarcns.connect.mongodb.MongoDbSinkConnector.RECORD_CONVERTER;
 import static org.radarcns.connect.mongodb.MongoDbSinkConnector.TOPICS_CONFIG;
 
@@ -54,8 +53,7 @@ public class MongoDbSinkTaskTest {
                 .createMongoDbWriter(any(), any(), anyInt(), anyLong(), any(), any());
 
         Map<String, String> config = new HashMap<>();
-        config.put(MONGO_DATABASE, "db");
-        config.put(MONGO_HOST, "localhost");
+        config.put(MONGO_URI, "mongodb://localhost/db");
         config.put(TOPICS_CONFIG, "t");
         config.put(BUFFER_CAPACITY, String.valueOf(10));
         config.put(RECORD_CONVERTER, RecordConverterFactory.class.getName());
