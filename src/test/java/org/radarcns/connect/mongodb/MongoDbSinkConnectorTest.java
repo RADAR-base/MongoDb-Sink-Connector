@@ -27,48 +27,38 @@ import static org.apache.kafka.connect.sink.SinkConnector.TOPICS_CONFIG;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.radarcns.connect.mongodb.MongoDbSinkConnector.BUFFER_CAPACITY;
 import static org.radarcns.connect.mongodb.MongoDbSinkConnector.COLLECTION_FORMAT;
-import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_DATABASE;
-import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_HOST;
-import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_PORT;
-import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_PORT_DEFAULT;
-import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_USERNAME;
+import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_URI;
 
 public class MongoDbSinkConnectorTest {
     @Test
-    public void taskClass() throws Exception {
+    public void taskClass() {
         assertEquals(MongoDbSinkTask.class, new MongoDbSinkConnector().taskClass());
     }
 
     @Test
-    public void taskConfigs() throws Exception {
+    public void taskConfigs() {
         assertThat(new MongoDbSinkConnector().taskConfigs(0), hasSize(0));
         assertThat(new MongoDbSinkConnector().taskConfigs(10), hasSize(10));
     }
 
     @Test
-    public void configParse() throws Exception {
+    public void configParse() {
         Map<String, String> exampleConfig = new HashMap<>();
-        exampleConfig.put(MONGO_HOST, "localhost");
-        exampleConfig.put(MONGO_DATABASE, "mydb");
+        exampleConfig.put(MONGO_URI, "mongodb://localhost/mydb");
         exampleConfig.put(TOPICS_CONFIG, "mytopic,myothertopic");
         exampleConfig.put(BUFFER_CAPACITY, "2");
         Map<String, Object> result = new MongoDbSinkConnector().config().parse(exampleConfig);
         assertEquals(2, result.get(BUFFER_CAPACITY));
-        assertEquals(MONGO_PORT_DEFAULT, result.get(MONGO_PORT));
-        assertEquals("localhost", result.get(MONGO_HOST));
         assertThat((Collection<?>)result.get(TOPICS_CONFIG), contains("mytopic", "myothertopic"));
-        assertNull(result.get(MONGO_USERNAME));
     }
 
     @Test(expected = ConfigException.class)
     public void configParseInvalidValue() throws Exception {
         Map<String, String> exampleConfig = new HashMap<>();
-        exampleConfig.put(MONGO_HOST, "localhost");
-        exampleConfig.put(MONGO_DATABASE, "mydb");
+        exampleConfig.put(MONGO_URI, "mongodb://localhost/mydb");
         exampleConfig.put(TOPICS_CONFIG, "mytopic,myothertopic");
         // capacity is invalid
         exampleConfig.put(BUFFER_CAPACITY, "-1");
@@ -79,8 +69,7 @@ public class MongoDbSinkConnectorTest {
     @Test(expected = ConfigException.class)
     public void configParseEmptyValue() throws Exception {
         Map<String, String> exampleConfig = new HashMap<>();
-        exampleConfig.put(MONGO_HOST, "");
-        exampleConfig.put(MONGO_DATABASE, "mydb");
+        exampleConfig.put(MONGO_URI, "mongodb://localhost/mydb");
         exampleConfig.put(TOPICS_CONFIG, "mytopic,myothertopic");
         // empty string not allowed
         exampleConfig.put(COLLECTION_FORMAT, "");
@@ -91,8 +80,7 @@ public class MongoDbSinkConnectorTest {
     @Test
     public void start() {
         Map<String, String> exampleConfig = new HashMap<>();
-        exampleConfig.put(MONGO_HOST, "localhost");
-        exampleConfig.put(MONGO_DATABASE, "mydb");
+        exampleConfig.put(MONGO_URI, "mongodb://localhost/mydb");
         exampleConfig.put(TOPICS_CONFIG, "mytopic,myothertopic");
         exampleConfig.put(BUFFER_CAPACITY, "2");
         new MongoDbSinkConnector().start(exampleConfig);
@@ -101,8 +89,7 @@ public class MongoDbSinkConnectorTest {
     @Test(expected = ConfigException.class)
     public void startInvalid() {
         Map<String, String> exampleConfig = new HashMap<>();
-        exampleConfig.put(MONGO_HOST, "");
-        exampleConfig.put(MONGO_DATABASE, "mydb");
+        exampleConfig.put(MONGO_URI, "mongodb:///mydb");
         exampleConfig.put(TOPICS_CONFIG, "mytopic,myothertopic");
         // empty string not allowed
         exampleConfig.put(COLLECTION_FORMAT, "");
