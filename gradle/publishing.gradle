@@ -10,22 +10,6 @@ buildscript {
 apply plugin: 'maven-publish'
 apply plugin: 'com.jfrog.bintray'
 
-def pomConfig = {
-    licenses {
-        license {
-            name "The Apache Software License, Version 2.0"
-            url "http://www.apache.org/licenses/LICENSE-2.0.txt"
-            distribution "RADAR-CNS Distributions"
-        }
-    }
-    developers {
-        developer {
-            id "radar-cns"
-            name "Nivethika"
-            email "nivethika@thehyve.nl"
-        }
-    }
-}
 // custom tasks for creating source/javadoc jars
 task sourcesJar(type: Jar, dependsOn: classes) {
     classifier = 'sources'
@@ -49,15 +33,30 @@ publishing {
             from components.java
             artifact sourcesJar
             artifact javadocJar
-            groupId 'org.radarcns'
-            artifactId 'kafka-connect-mongodb-connect'
-            version project.version
-            pom.withXml {
-                def root = asNode()
-                root.appendNode('description', 'The MongoDB connect connector is a tool for scalably and reliably streaming data between Apache Kafka and MongoDB.')
-                root.appendNode('name', 'kafka-connect-mongodb-connect')
-                root.appendNode('url', 'https://github.com/RADAR-CNS/MongoDb-Sink-Connector.git')
-                root.children().last() + pomConfig
+
+            pom {
+                description = 'The MongoDB connect connector is a tool for scalably and reliably streaming data between Apache Kafka and MongoDB.'
+                url = 'https://github.com/RADAR-CNS/MongoDb-Sink-Connector'
+
+                licenses {
+                    license {
+                        name = "The Apache Software License, Version 2.0"
+                        url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+                        distribution = "repo"
+                    }
+                }
+                developers {
+                    developer {
+                        id = "nivemaham"
+                        name = "Nivethika"
+                        email = "nivethika@thehyve.nl"
+                    }
+                    developer {
+                        id = "blootsvoets"
+                        name = "Joris Borgdorff"
+                        email = "joris@thehyve.nl"
+                    }
+                }
             }
         }
     }
@@ -66,10 +65,10 @@ publishing {
 
 
 bintray {
-    user = System.getenv('BINTRAY_USER') ? System.getenv('BINTRAY_USER') : project.hasProperty('bintrayUser')
-    key =  System.getenv('BINTRAY_API_KEY') ? System.getenv('BINTRAY_API_KEY') : project.hasProperty('bintrayApiKey')
-    override = false
-    publications = ['RadarMongoDBPublication']
+    user System.getenv('BINTRAY_USER')? System.getenv('BINTRAY_USER') : project.property('bintrayUser')
+    key System.getenv('BINTRAY_API_KEY') ? System.getenv('BINTRAY_API_KEY') : project.property('bintrayApiKey')
+    override false
+    publications 'RadarMongoDBPublication'
     pkg {
         repo = 'org.radarcns'
         name = 'kafka-connect-mongodb-connect'
