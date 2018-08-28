@@ -17,6 +17,7 @@
 package org.radarcns.connect.util;
 
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.TimerTask;
@@ -27,21 +28,18 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class Monitor extends TimerTask {
     private final AtomicInteger count;
-    private final Logger log;
     private final String message;
 
     private final Collection<?> buffer;
 
-    public Monitor(Logger log, String message) {
-        this(log, message, null);
+    private static final Logger log = LoggerFactory.getLogger(Monitor.class);
+
+    public Monitor(String message) {
+        this( message, null);
     }
 
-    public Monitor(Logger log, String message, Collection<?> buffer) {
-        if (log == null) {
-            throw new IllegalArgumentException("Argument log may not be null");
-        }
+    public Monitor(String message, Collection<?> buffer) {
         this.count = new AtomicInteger(0);
-        this.log = log;
         this.message = message;
         this.buffer = buffer;
     }
