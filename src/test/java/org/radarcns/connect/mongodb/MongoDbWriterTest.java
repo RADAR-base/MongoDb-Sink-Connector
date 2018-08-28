@@ -64,7 +64,7 @@ public class MongoDbWriterTest {
         partDoc.put("offset", 999L);
 
         when(iterator.next()).thenReturn(partDoc);
-        when(wrapper.getDocuments("OFFSETS")).thenReturn(iterable);
+        when(wrapper.getDocuments("OFFSETS", false)).thenReturn(iterable);
 
         BlockingQueue<SinkRecord> buffer = new LinkedBlockingQueue<>();
 

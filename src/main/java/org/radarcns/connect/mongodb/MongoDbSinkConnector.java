@@ -62,6 +62,8 @@ public class MongoDbSinkConnector extends SinkConnector {
     public static final int BATCH_FLUSH_MS_DEFAULT = 15_000;
     public static final String COLLECTION_FORMAT = "mongo.collection.format";
     public static final String RECORD_CONVERTER = "record.converter.class";
+    public static final String OFFSET_COLLECTION_DEFAULT = "OFFSETS";
+    public static final String OFFSET_COLLECTION = "mongo.offset.collection";
 
     static final ConfigDef CONFIG_DEF = new ConfigDef()
             .define(MONGO_HOST, Type.STRING, NO_DEFAULT_VALUE, new NotEmptyString(), HIGH,
@@ -101,7 +103,9 @@ public class MongoDbSinkConnector extends SinkConnector {
                             + " does not reach this capacity within batch.flush.ms, it will be"
                             + " written anyway.")
             .define(BATCH_FLUSH_MS, Type.INT, BATCH_FLUSH_MS_DEFAULT, ConfigDef.Range.atLeast(0),
-                LOW, "Flush a batch after this amount of milliseconds.");
+                LOW, "Flush a batch after this amount of milliseconds.")
+            .define(OFFSET_COLLECTION, Type.STRING, OFFSET_COLLECTION_DEFAULT,
+                    MEDIUM, "The offset collection for storage latest offset processed. Default: "+ OFFSET_COLLECTION_DEFAULT);
     private Map<String, String> connectorConfig;
 
     @Override

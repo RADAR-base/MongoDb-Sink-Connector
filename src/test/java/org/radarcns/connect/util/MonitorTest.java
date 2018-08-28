@@ -37,7 +37,7 @@ public class MonitorTest {
 
     @Test
     public void runWithoutBuffer() throws Exception {
-        Monitor monitor = new Monitor(mockLogger, "test");
+        Monitor monitor = new Monitor("test");
         monitor.run();
         verify(mockLogger).info("{} {}", 0, "test");
         assertEquals(0, monitor.getCount());
@@ -54,7 +54,7 @@ public class MonitorTest {
         Collection<String> buffer = new ArrayList<>();
         buffer.add("one");
 
-        Monitor monitor = new Monitor(mockLogger, "test", buffer);
+        Monitor monitor = new Monitor("test", buffer);
         monitor.run();
         verify(mockLogger).info("{} {} {} records need to be processed.", 0, "test", 1);
         assertEquals(0, monitor.getCount());

@@ -24,6 +24,7 @@ import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.bson.Document;
+import org.bson.types.ObjectId;
 import org.radarcns.connect.mongodb.serialization.RecordConverter;
 import org.radarcns.connect.mongodb.serialization.RecordConverterFactory;
 import org.radarcns.connect.util.Monitor;
@@ -54,7 +55,6 @@ import java.util.stream.Collectors;
 public class MongoDbWriter implements Closeable, Runnable {
     private static final Logger logger = LoggerFactory.getLogger(MongoDbWriter.class);
     private static final int NUM_RETRIES = 3;
-    private static final String OFFSETS_COLLECTION = "OFFSETS";
 
     private final MongoWrapper mongoHelper;
     private final BlockingQueue<SinkRecord> buffer;
@@ -66,6 +66,7 @@ public class MongoDbWriter implements Closeable, Runnable {
     private final long flushMs;
     private final int maxBufferSize;
     private Throwable exception;
+    private final String offsetCollection;
 
     /**
      * Creates a writer with a MongoDB client.
@@ -76,13 +77,13 @@ public class MongoDbWriter implements Closeable, Runnable {
      * @param timer timer to run a monitoring task on
      * @throws ConnectException if cannot connect to the MongoDB database.
      */
-    public MongoDbWriter(MongoWrapper mongoHelper, BlockingQueue<SinkRecord> buffer,
+    public MongoDbWriter(MongoWrapper mongoHelper, BlockingQueue<SinkRecord> buffer, String offsetCollection,
             int maxBufferSize, long flushMs, RecordConverterFactory converterFactory, Timer timer)
             throws ConnectException {
         this.buffer = buffer;
-        this.monitor = new Monitor(logger, "have been written in MongoDB", this.buffer);
+        this.monitor = new Monitor("have been written in MongoDB", this.buffer);
         timer.schedule(monitor, 0, 30_000);
-
+        this.offsetCollection = offsetCollection;
         latestOffsets = new HashMap<>();
         stopping = new AtomicBoolean(false);
         this.maxBufferSize = maxBufferSize;
@@ -274,7 +275,7 @@ public class MongoDbWriter implements Closeable, Runnable {
                 Document doc = new Document();
                 doc.put("_id", id);
                 doc.put("offset", offset.getValue());
-                mongoHelper.store(OFFSETS_COLLECTION, doc);
+                mongoHelper.store(offsetCollection, doc);
             }
         } catch (MongoException ex) {
             logger.warn("Failed to store offsets to MongoDB", ex);
@@ -282,7 +283,8 @@ public class MongoDbWriter implements Closeable, Runnable {
     }
 
     private void retrieveOffsets() {
-        MongoIterable<Document> documentIterable = mongoHelper.getDocuments(OFFSETS_COLLECTION);
+        logger.info("Retrieve offsets from collection: {}", offsetCollection);
+        MongoIterable<Document> documentIterable = mongoHelper.getDocuments(offsetCollection, false);
         try (MongoCursor<Document> documents = documentIterable.iterator()) {
             while (documents.hasNext()) {
                 Document doc = documents.next();
@@ -340,8 +342,9 @@ public class MongoDbWriter implements Closeable, Runnable {
         }
 
         public String getId() {
-            String value = (String) getDocument().get("_id");
-            return value != null ? value : UUID.randomUUID().toString();
+            Object value = getDocument().get("_id");
+            String valStr = value.toString();
+            return valStr != null ? valStr : UUID.randomUUID().toString();
         }
     }
 }
