@@ -110,6 +110,8 @@ Modify [sink.properties](https://github.com/RADAR-base/MongoDb-Sink-Connector/bl
 <tr>
 <td>mongo.collection.format</td></td><td>A format string for the destination collection name, which may contain `${topic}` as a placeholder for the originating topic name.
 For example, `kafka_${topic}` for the topic `orders` will map to the collection name `kafka_orders`.</td></td><td>string</td></td><td>{$topic}</td></td><td>Non-empty string</td></td><td>medium</td></td></tr>
+<tr>
+<td>mongo.offset.collection</td></td><td>The mongo collection for storage the latest offset processed.</td></td><td>string</td></td><td>OFFSETS</td></td><td></td></td><td>medium</td></td></tr>
 </tbody></table>
 
 - A sample configuration may look as below.
