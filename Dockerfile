@@ -1,3 +1,5 @@
+# Copyright 2018 The Hyve
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -30,7 +32,7 @@ COPY ./src/ /code/src
 
 RUN ./gradlew jar
 
-FROM confluentinc/cp-kafka-connect-base:4.1.0
+FROM confluentinc/cp-kafka-connect-base:5.1.2
 
 MAINTAINER Nivethika M <nivethika@thehyve.nl> , Joris B <joris@thehyve.nl> , Yatharth R <yatharth.ranjan@kcl.ac.uk>
 
