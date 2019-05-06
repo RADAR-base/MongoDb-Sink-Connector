@@ -18,9 +18,8 @@ package org.radarcns.connect.mongodb;
 
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
-import com.mongodb.MongoCredential;
+import com.mongodb.MongoClientURI;
 import com.mongodb.MongoException;
-import com.mongodb.ServerAddress;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.MongoIterable;
@@ -41,11 +40,7 @@ import java.util.stream.Stream;
 
 import static com.mongodb.client.model.Filters.eq;
 import static org.radarcns.connect.mongodb.MongoDbSinkConnector.COLLECTION_FORMAT;
-import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_DATABASE;
-import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_HOST;
-import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_PASSWORD;
-import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_PORT;
-import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_USERNAME;
+import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_URI;
 
 /**
  * Wrapper around {@link MongoClient}.
@@ -53,7 +48,6 @@ import static org.radarcns.connect.mongodb.MongoDbSinkConnector.MONGO_USERNAME;
 public class MongoWrapper implements Closeable {
     private final Logger log = LoggerFactory.getLogger(MongoWrapper.class);
     private final MongoClient mongoClient;
-    private final MongoCredential credentials;
     private final String collectionFormat;
     private final MongoDatabase database;
 
@@ -68,49 +62,20 @@ public class MongoWrapper implements Closeable {
      * @param config Configuration of the client, according to {@link MongoDbSinkConnector}.
      * @throws ConnectException a MongoClient could not be created.
      */
-    public MongoWrapper(AbstractConfig config, MongoClientOptions options) {
+    public MongoWrapper(AbstractConfig config, MongoClientOptions.Builder options) {
         collectionFormat = config.getString(COLLECTION_FORMAT);
-        String dbName = config.getString(MONGO_DATABASE);
+        MongoClientURI mongoUri = new MongoClientURI(config.getString(MONGO_URI),
+                options == null ? new MongoClientOptions.Builder() : options);
         collectionCache = new HashMap<>();
-        credentials = createCredentials(config, dbName);
-        mongoClient = createClient(config, options);
-        database = mongoClient.getDatabase(dbName);
+        mongoClient = createClient(mongoUri);
+        database = mongoClient.getDatabase(mongoUri.getDatabase());
     }
 
-    private MongoCredential createCredentials(AbstractConfig config, String dbName) {
-        String userName = config.getString(MONGO_USERNAME);
-        String password = config.getString(MONGO_PASSWORD);
-        if (isValid(userName) && isValid(password)) {
-            return MongoCredential.createCredential(userName, dbName, password.toCharArray());
-        } else {
-            return null;
-        }
-    }
-
-    private boolean isValid(String value) {
-        return value != null && !value.isEmpty();
-    }
-
-    private MongoClient createClient(AbstractConfig config, MongoClientOptions options) {
-        String host = config.getString(MONGO_HOST);
-        int port = config.getInt(MONGO_PORT);
-
+    private MongoClient createClient(MongoClientURI uri) {
         try {
-            MongoClientOptions actualOptions;
-            if (options != null) {
-                actualOptions = options;
-            } else {
-                actualOptions = new MongoClientOptions.Builder().build();
-            }
-            ServerAddress server = new ServerAddress(host, port);
-            if (credentials != null) {
-                return new MongoClient(server, credentials, actualOptions);
-            } else {
-                return new MongoClient(server, actualOptions);
-            }
+            return new MongoClient(uri);
         } catch (MongoException ex) {
-            log.error("Failed to create MongoDB client to {}:{} with credentials {}", host, port,
-                    credentials, ex);
+            log.error("Failed to create MongoDB client to {}", uri, ex);
             throw new ConnectException("MongoDb client cannot be created.", ex);
         }
     }

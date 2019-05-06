@@ -27,6 +27,7 @@ import org.radarcns.connect.mongodb.serialization.RecordConverterFactory;
 import org.radarcns.connect.util.NotEmptyString;
 import org.radarcns.connect.util.Utility;
 import org.radarcns.connect.util.ValidClass;
+import org.radarcns.connect.util.ValidMongoUri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,12 +49,7 @@ public class MongoDbSinkConnector extends SinkConnector {
     private static final Logger logger = LoggerFactory.getLogger(MongoDbSinkConnector.class);
 
     public static final String MONGO_GROUP = "MongoDB";
-    public static final String MONGO_HOST = "mongo.host";
-    public static final String MONGO_PORT = "mongo.port";
-    public static final int MONGO_PORT_DEFAULT = 27017;
-    public static final String MONGO_USERNAME = "mongo.username";
-    public static final String MONGO_PASSWORD = "mongo.password";
-    public static final String MONGO_DATABASE = "mongo.database";
+    public static final String MONGO_URI = "mongo.uri";
     public static final String BUFFER_CAPACITY = "buffer.capacity";
     public static final int BUFFER_CAPACITY_DEFAULT = 20_000;
     public static final String BATCH_SIZE = "batch.size";
@@ -64,22 +60,9 @@ public class MongoDbSinkConnector extends SinkConnector {
     public static final String RECORD_CONVERTER = "record.converter.class";
 
     static final ConfigDef CONFIG_DEF = new ConfigDef()
-            .define(MONGO_HOST, Type.STRING, NO_DEFAULT_VALUE, new NotEmptyString(), HIGH,
-                "MongoDB host name to write data to", MONGO_GROUP, 0, ConfigDef.Width.MEDIUM,
-                "MongoDB hostname")
-            .define(MONGO_PORT, Type.INT, MONGO_PORT_DEFAULT, ConfigDef.Range.atLeast(1),
-                LOW, "MongoDB port", MONGO_GROUP, 1, ConfigDef.Width.SHORT, "MongoDB port")
-            .define(MONGO_DATABASE, Type.STRING, NO_DEFAULT_VALUE, new NotEmptyString(),
-                HIGH, "MongoDB database name", MONGO_GROUP, 2, ConfigDef.Width.SHORT,
-                "MongoDB database")
-            .define(MONGO_USERNAME, Type.STRING, null, MEDIUM,
-                "Username to connect to MongoDB database. If not set, no credentials are used.",
-                    MONGO_GROUP, 3, ConfigDef.Width.SHORT, "MongoDB username",
-                Collections.singletonList(MONGO_PASSWORD))
-            .define(MONGO_PASSWORD, Type.STRING, null, MEDIUM,
-                "Password to connect to MongoDB database. If not set, no credentials are used.",
-                    MONGO_GROUP, 4, ConfigDef.Width.SHORT, "MongoDB password",
-                Collections.singletonList(MONGO_USERNAME))
+            .define(MONGO_URI, Type.STRING, NO_DEFAULT_VALUE, new ValidMongoUri(), HIGH,
+                "URI encoding MongoDB host, port, user (if any) and database.",
+                    MONGO_GROUP, 0, ConfigDef.Width.MEDIUM, "MongoDB URI")
             .define(COLLECTION_FORMAT, Type.STRING, "{$topic}", new NotEmptyString(), MEDIUM,
                 "A format string for the destination collection name, which may contain "
                 + "`${topic}` as a placeholder for the originating topic name.\n"

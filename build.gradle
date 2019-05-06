@@ -4,21 +4,23 @@ plugins {
     id "com.jfrog.bintray" version "1.7.3" apply false
 }
 
-version = '0.2.2'
+version = '0.2.3'
 
 targetCompatibility = '1.8'
 sourceCompatibility = '1.8'
 
-ext.slf4jVersion = '1.7.25'
-ext.kafkaVersion = '1.1.0'
+ext.slf4jVersion = '1.7.26'
+ext.kafkaVersion = '2.1.1'
 ext.mongodbVersion = '3.6.1'
-ext.confluentVersion = '4.1.0'
+ext.confluentVersion = '5.1.2'
+ext.radarCommonsVersion = '0.12.0'
 
 // In this section you declare where to find the dependencies of your project
 repositories {
     jcenter()
     maven { url 'http://packages.confluent.io/maven/' }
     maven { url 'http://dl.bintray.com/typesafe/maven-releases' }
+    maven { url  'http://dl.bintray.com/radar-base/org.radarbase' }
 }
 
 // In this section you declare the dependencies for your production and test code
@@ -33,6 +35,7 @@ dependencies {
     compileOnly group: 'org.apache.kafka', name: 'kafka_2.11', version: kafkaVersion
 
     api group: 'org.mongodb', name: 'mongo-java-driver', version: mongodbVersion
+    runtimeOnly group: 'org.radarbase', name: 'radar-commons-unsafe', version: radarCommonsVersion
 }
 
 jar {
@@ -42,8 +45,8 @@ jar {
     }
 }
 
-task wrapper(type: Wrapper) {
-    gradleVersion = '4.4'
+wrapper {
+    gradleVersion = '5.4.1'
 }
 
 if (!hasProperty('profile')) {

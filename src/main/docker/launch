@@ -34,6 +34,7 @@ if [ "$KAFKA_JMX_PORT" ]; then
   export KAFKA_JMX_OPTS="$KAFKA_JMX_OPTS -Djava.rmi.server.hostname=$KAFKA_JMX_HOSTNAME -Dcom.sun.management.jmxremote.local.only=false -Dcom.sun.management.jmxremote.rmi.port=$JMX_PORT -Dcom.sun.management.jmxremote.port=$JMX_PORT"
 fi
 
+# Busy waiting loop that waits untill all topic are available
 echo "===> Wait for infrastructure ..."
 kafka-wait
 radar_check=$?
@@ -41,9 +42,11 @@ if [ "$radar_check" -ne 0 ]; then
     exit ${radar_check}
 fi
 
-echo "===> Launching ${COMPONENT} ... "
-# Add external jars to the classpath
+echo "===> Launching ${COMPONENT} ..."
+# Add our jar to the classpath so that the custom classes can be loaded first.
 # And this also makes sure that the CLASSPATH does not start with ":/etc/..."
-# because this causes the plugin scanner to scan the entire disk.
-export CLASSPATH="/usr/share/java/kafka-connect/plugins/kafka-connect-mongodb-sink/*"
-exec connect-standalone /etc/kafka-connect/kafka-connect.properties /etc/kafka-connect/sink.properties
+# other jars are loaded via the plugin path
+export CLASSPATH="/etc/${COMPONENT}/kafka-connect-mongodb-sink/*"
+
+# execute connector in standalone mode
+exec connect-standalone /etc/"${COMPONENT}"/"${COMPONENT}".properties $(find /etc/"${COMPONENT}"/ -type f -name "${CONNECTOR_PROPERTY_FILE_PREFIX}*.properties")

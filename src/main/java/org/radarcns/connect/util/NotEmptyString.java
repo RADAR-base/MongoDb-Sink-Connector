@@ -32,4 +32,9 @@ public class NotEmptyString implements ConfigDef.Validator {
             throw new ConfigException(name, value, "String may not be empty");
         }
     }
+
+    @Override
+    public String toString() {
+        return "Non-empty string";
+    }
 }
