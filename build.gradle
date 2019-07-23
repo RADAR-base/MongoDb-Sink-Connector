@@ -9,10 +9,10 @@ version = '0.2.2'
 targetCompatibility = '1.8'
 sourceCompatibility = '1.8'
 
-ext.slf4jVersion = '1.7.25'
-ext.kafkaVersion = '1.1.0'
+ext.slf4jVersion = '1.7.26'
+ext.kafkaVersion = '1.1.1'
 ext.mongodbVersion = '3.6.1'
-ext.confluentVersion = '4.1.0'
+ext.confluentVersion = '4.1.3'
 
 // In this section you declare where to find the dependencies of your project
 repositories {
