@@ -64,7 +64,7 @@ public class MongoDbWriterTest {
         partDoc.put("offset", 999L);
 
         when(iterator.next()).thenReturn(partDoc);
-        when(wrapper.getDocuments("OFFSETS")).thenReturn(iterable);
+        when(wrapper.getDocuments("OFFSETS", false)).thenReturn(iterable);
 
         BlockingQueue<SinkRecord> buffer = new LinkedBlockingQueue<>();
 
@@ -87,7 +87,8 @@ public class MongoDbWriterTest {
 
         Timer timer = mock(Timer.class);
 
-        MongoDbWriter writer = new MongoDbWriter(wrapper, buffer, 1000, 1, factory, timer);
+        MongoDbWriter writer = new MongoDbWriter(wrapper, buffer,
+                "OFFSETS",1000, 1, factory, timer);
         verify(timer).schedule(any(Monitor.class), eq(0L), eq(30_000L));
 
         Thread writerThread = new Thread(writer, "MongoDB-writer");

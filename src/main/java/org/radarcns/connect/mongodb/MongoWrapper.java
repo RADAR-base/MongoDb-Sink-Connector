@@ -107,7 +107,7 @@ public class MongoWrapper implements Closeable {
      * @throws MongoException if the document could not be stored.
      */
     public void store(String topic, Document doc) throws MongoException {
-        MongoCollection<Document> collection = getCollection(topic);
+        MongoCollection<Document> collection = getCollection(topic, true);
         Object mongoId = doc.get(MONGO_ID_KEY);
         if (mongoId != null) {
             collection.replaceOne(eq(MONGO_ID_KEY, mongoId), doc, UPDATE_UPSERT);
@@ -125,7 +125,7 @@ public class MongoWrapper implements Closeable {
      * @throws MongoException if a document could not be stored.
      */
     public void store(String topic, Stream<Document> docs) throws MongoException {
-        getCollection(topic).bulkWrite(docs
+        getCollection(topic, true).bulkWrite(docs
                 .map(doc -> {
                     Object mongoId = doc.get(MONGO_ID_KEY);
                     if (mongoId != null) {
@@ -137,15 +137,16 @@ public class MongoWrapper implements Closeable {
                 .collect(Collectors.toList()));
     }
 
-    private MongoCollection<Document> getCollection(String topic) {
+    private MongoCollection<Document> getCollection(String topic, boolean useCollectionFormat) {
         return collectionCache.computeIfAbsent(topic,
-                t -> database.getCollection(collectionFormat.replace("{$topic}", t)));
+                t -> database.getCollection(useCollectionFormat
+                        ? collectionFormat.replace("{$topic}", t) : t));
     }
 
     /**
      * Retrieves all documents in a collection.
      */
-    public MongoIterable<Document> getDocuments(String topic) {
-        return getCollection(topic).find();
+    public MongoIterable<Document> getDocuments(String topic, boolean useCollectionFormat) {
+        return getCollection(topic, useCollectionFormat).find();
     }
 }

@@ -50,7 +50,7 @@ public class MongoDbSinkTaskTest {
 
         //noinspection unchecked
         doAnswer(answer).when(sinkTask)
-                .createMongoDbWriter(any(), any(), anyInt(), anyLong(), any(), any());
+                .createMongoDbWriter(any(), any(), any(), anyInt(), anyLong(), any(), any());
 
         Map<String, String> config = new HashMap<>();
         config.put(MONGO_URI, "mongodb://localhost/db");

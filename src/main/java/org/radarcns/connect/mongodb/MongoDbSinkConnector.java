@@ -58,6 +58,8 @@ public class MongoDbSinkConnector extends SinkConnector {
     public static final int BATCH_FLUSH_MS_DEFAULT = 15_000;
     public static final String COLLECTION_FORMAT = "mongo.collection.format";
     public static final String RECORD_CONVERTER = "record.converter.class";
+    public static final String OFFSET_COLLECTION_DEFAULT = "OFFSETS";
+    public static final String OFFSET_COLLECTION = "mongo.offset.collection";
 
     static final ConfigDef CONFIG_DEF = new ConfigDef()
             .define(MONGO_URI, Type.STRING, NO_DEFAULT_VALUE, new ValidMongoUri(), HIGH,
@@ -69,6 +71,10 @@ public class MongoDbSinkConnector extends SinkConnector {
                 + "For example, `kafka_${topic}` for the topic `orders` will map to the "
                 + "collection name `kafka_orders`.", MONGO_GROUP, 5, ConfigDef.Width.LONG,
                 "MongoDB collection name format")
+            .define(OFFSET_COLLECTION, Type.STRING, OFFSET_COLLECTION_DEFAULT,
+                    MEDIUM, "The mongo collection for storage "
+                            + "the latest offset processed. Default: "
+                            + OFFSET_COLLECTION_DEFAULT)
             .define(TOPICS_CONFIG, Type.LIST, NO_DEFAULT_VALUE, HIGH,
                 "List of topics to be streamed.")
             .define(BUFFER_CAPACITY, Type.INT, BUFFER_CAPACITY_DEFAULT,
